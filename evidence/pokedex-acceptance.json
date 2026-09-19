@@ -1,0 +1,52 @@
+[
+  {
+    "prompt": "tell me about Gengar",
+    "expected_tool": "get_pokemon_info",
+    "exit_code": 0,
+    "wall_s": 39.44261997798458,
+    "stdout": "Needle -> get_pokemon_info({\"name\": \"Gengar\"})\n\nPSTV:\n  POKEDEX | GENGAR [PokeAPI #94]\n  types: Ghost / Poison\n  abilities: Cursed Body\n  base stats: HP 60 | Atk 65 | Def 60\n              SpA 130 | SpD 75 | Spe 110\n  source: PokeAPI (cached)\n",
+    "stderr": "",
+    "script_sha256": "91c7e1125ebf6e08004b281cf902517752394bb5ab806eb5f01beb8669678875",
+    "passed": true
+  },
+  {
+    "prompt": "what types and abilities does Pikachu have?",
+    "expected_tool": "get_pokemon_info",
+    "exit_code": 0,
+    "wall_s": 38.17685771500692,
+    "stdout": "Needle -> get_pokemon_info({\"name\": \"Pikachu\"})\n\nPSTV:\n  POKEDEX | PIKACHU [PokeAPI #25]\n  types: Electric\n  abilities: Static / Lightning Rod (hidden)\n  base stats: HP 35 | Atk 55 | Def 40\n              SpA 50 | SpD 50 | Spe 90\n  source: PokeAPI (fetched)\n",
+    "stderr": "",
+    "script_sha256": "91c7e1125ebf6e08004b281cf902517752394bb5ab806eb5f01beb8669678875",
+    "passed": true
+  },
+  {
+    "prompt": "look up Mr. Mime in the Pokedex",
+    "expected_tool": "get_pokemon_info",
+    "exit_code": 0,
+    "wall_s": 39.94811355997808,
+    "stdout": "Needle -> get_pokemon_info({\"name\": \"Mr. Mime\"})\n\nPSTV:\n  POKEDEX | MR-MIME [PokeAPI #122]\n  types: Psychic / Fairy\n  abilities: Soundproof / Filter / Technician (hidden)\n  base stats: HP 40 | Atk 45 | Def 65\n              SpA 100 | SpD 120 | Spe 90\n  source: PokeAPI (fetched)\n",
+    "stderr": "",
+    "script_sha256": "91c7e1125ebf6e08004b281cf902517752394bb5ab806eb5f01beb8669678875",
+    "passed": true
+  },
+  {
+    "prompt": "tell me about Definitelynotapokemon",
+    "expected_tool": null,
+    "exit_code": 1,
+    "wall_s": 43.09466327697737,
+    "stdout": "Needle -> get_pokemon_info({\"name\": \"Definitelynotapokemon\"})\n\nPSTV:\n  get_pokemon_info failed; no retry or fallback. Check the lookup name, connection, or local cache.\n",
+    "stderr": "",
+    "script_sha256": "91c7e1125ebf6e08004b281cf902517752394bb5ab806eb5f01beb8669678875",
+    "passed": true
+  },
+  {
+    "prompt": "what is the weather in Cheshire?",
+    "expected_tool": "get_weather",
+    "exit_code": 0,
+    "wall_s": 56.323028065031394,
+    "stdout": "Needle -> get_weather({\"city\": \"Cheshire\"})\n\nPSTV:\n  location (wttr.in): Cheshire, Connecticut, United States of America\n  weather: Overcast \n  temperature: 61 F / 16 C\n",
+    "stderr": "",
+    "script_sha256": "91c7e1125ebf6e08004b281cf902517752394bb5ab806eb5f01beb8669678875",
+    "passed": true
+  }
+]

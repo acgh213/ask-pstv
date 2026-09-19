@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""One local model call, one bounded tool: local status or HTTPS weather."""
+"""One local model call, one bounded tool: status, weather, or a Pokedex card."""
 import json
 import os
+import re
 from pathlib import Path
 import resource
 import signal
@@ -18,13 +19,12 @@ EXAMPLES = (
     'how are you doing?',
     'what is the weather in Cheshire?',
     'what is the weather in 06410?',
-    'how much room do you have left?',
-    'show me the disk usage',
+    'tell me about Gengar',
+    'what types and abilities does Pikachu have?',
     'what kernel are you running?',
     'what architecture are you?',
     'write me a love poem about the moon',
 )
-
 
 def get_system_status():
     seconds = int(float(Path('/proc/uptime').read_text().split()[0]))
@@ -37,7 +37,6 @@ def get_system_status():
     return [f'uptime: {days}d {hours:02}:{minutes:02}:{seconds:02}',
             f'memory available: {available:.1f} MiB',
             f'load (1/5/15 min): {" / ".join(load)}']
-
 
 def get_storage_status():
     lines = []
@@ -56,12 +55,10 @@ def get_storage_status():
                          f'{used:.2f} GiB used / {total:.2f} GiB total')
     return lines
 
-
 def get_kernel_info():
     info = os.uname()
     return [f'kernel: {info.sysname} {info.release}',
             f'version: {info.version}', f'architecture: {info.machine}']
-
 
 def weather_location(city):
     if (not isinstance(city, str) or not 1 <= len(city) <= 80 or city != city.strip()
@@ -72,23 +69,25 @@ def weather_location(city):
     return {'cheshire': 'Cheshire, Connecticut, USA',
             '06410': 'Cheshire, Connecticut, USA'}.get(city.casefold(), city)
 
-
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
 
-
-def get_weather(city):
-    location = weather_location(city)
-    url = 'https://wttr.in/' + urllib.parse.quote(location, safe='') + '?format=j1&lang=en'
+def fetch_json(url, limit=262144):
+    if not url.startswith(('https://wttr.in/', 'https://pokeapi.co/api/v2/pokemon/')):
+        raise ValueError('unapproved endpoint')
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     request = urllib.request.Request(url, headers={'User-Agent': 'ask-pstv/1.0'})
     with opener.open(request, timeout=15) as reply:
-        raw = reply.read(262145)
-    if len(raw) > 262144:
-        raise OSError('weather response too large')
+        raw = reply.read(limit + 1)
+    if len(raw) > limit:
+        raise OSError('API response too large')
+    return json.loads(raw)
+
+def get_weather(city):
+    location = weather_location(city)
     try:
-        data = json.loads(raw)
+        data = fetch_json('https://wttr.in/' + urllib.parse.quote(location, safe='') + '?format=j1&lang=en')
         area, now = data['nearest_area'][0], data['current_condition'][0]
         town = area['areaName'][0]['value']
         region, country = area['region'][0]['value'], area['country'][0]['value']
@@ -105,8 +104,54 @@ def get_weather(city):
     except (KeyError, IndexError, TypeError, ValueError, AttributeError, RecursionError) as exc:
         raise OSError('weather service returned unusable data') from exc
 
+def pokemon_slug(name):
+    if not isinstance(name, str) or not 1 <= len(name) <= 60 or name != name.strip():
+        raise ValueError('invalid Pokemon name')
+    slug = {'mr. mime': 'mr-mime', 'mr mime': 'mr-mime', "farfetch'd": 'farfetchd',
+            'mime jr.': 'mime-jr', 'nidoran♀': 'nidoran-f', 'nidoran♂': 'nidoran-m'}.get(name.casefold(), name.lower())
+    if not re.fullmatch(r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*', slug):
+        raise ValueError('use a Pokemon name, not a URL or number')
+    return slug
 
-TOOLS = {'get_weather': get_weather, 'get_system_status': get_system_status,
+def get_pokemon_info(name):
+    slug = pokemon_slug(name)
+    path = HERE / '.pokemon-cache' / (slug + '.json')
+    cached = path.is_file()
+    try:
+        if cached:
+            with path.open('rb') as file:
+                raw = file.read(1048577)
+            if len(raw) > 1048576:
+                raise ValueError('oversized cache')
+            data = json.loads(raw)
+        else:
+            data = fetch_json('https://pokeapi.co/api/v2/pokemon/' + slug + '/', 1048576)
+        types = [item['type']['name'] for item in data['types']]
+        abilities = [item['ability']['name'] for item in data['abilities']]
+        keys = ['hp', 'attack', 'defense', 'special-attack', 'special-defense', 'speed']
+        stats = {item['stat']['name']: item['base_stat'] for item in data['stats']}
+        if (data['name'] != slug or type(data['id']) is not int or not 1 <= data['id'] <= 100000
+                or not 1 <= len(types) <= 2 or not 1 <= len(abilities) <= 6
+                or not all(isinstance(v, str) and len(v) <= 60 and re.fullmatch(r'[a-z0-9-]+', v) for v in types + abilities)
+                or len(data['stats']) != 6 or set(stats) != set(keys)
+                or not all(type(v) is int and 0 <= v <= 1000 for v in stats.values())
+                or not all(type(a['is_hidden']) is bool for a in data['abilities'])):
+            raise ValueError('invalid Pokemon data')
+        abilities = [a.replace('-', ' ').title() + (' (hidden)' if item['is_hidden'] else '')
+                     for a, item in zip(abilities, data['abilities'])]
+        lines = [f'POKEDEX | {slug.upper()} [PokeAPI #{data["id"]}]',
+                 'types: ' + ' / '.join(t.title() for t in types), 'abilities: ' + ' / '.join(abilities),
+                 f'base stats: HP {stats[keys[0]]} | Atk {stats[keys[1]]} | Def {stats[keys[2]]}',
+                 f'            SpA {stats[keys[3]]} | SpD {stats[keys[4]]} | Spe {stats[keys[5]]}',
+                 'source: PokeAPI (' + ('cached' if cached else 'fetched') + ')']
+        if not cached:
+            path.parent.mkdir(exist_ok=True)
+            path.write_text(json.dumps({k: data[k] for k in ('id', 'name', 'types', 'abilities', 'stats')}))
+        return lines
+    except (KeyError, IndexError, TypeError, ValueError, AttributeError, RecursionError) as exc:
+        raise OSError('unusable Pokemon response/cache; no retry') from exc
+
+TOOLS = {'get_pokemon_info': get_pokemon_info, 'get_weather': get_weather, 'get_system_status': get_system_status,
          'get_storage_status': get_storage_status,
          'get_kernel_info': get_kernel_info}
 DESCRIPTIONS = {
@@ -114,8 +159,9 @@ DESCRIPTIONS = {
     'get_system_status': 'Get uptime, available RAM and CPU load. Check how the computer is doing.',
     'get_storage_status': 'Get disk usage and free storage space. Check how much room is left.',
     'get_kernel_info': 'Get the Linux kernel version and processor architecture.',
+    'get_pokemon_info': 'Look up a named Pokemon in the Pokedex: types, abilities and base stats.',
 }
-
+ARG_FIELDS = {'get_weather': 'city', 'get_pokemon_info': 'name'}
 
 def unique_object(pairs):
     result = {}
@@ -124,7 +170,6 @@ def unique_object(pairs):
             raise ValueError('duplicate JSON key')
         result[key] = value
     return result
-
 
 def select_tool(raw):
     if len(raw) > 65536:
@@ -152,19 +197,18 @@ def select_tool(raw):
             or not isinstance(call['name'], str) or call['name'] not in TOOLS
             or not isinstance(call['arguments'], dict)):
         raise ValueError('tool or arguments not allowlisted')
-    if call['name'] == 'get_weather':
-        if set(call['arguments']) != {'city'}:
-            raise ValueError('weather requires only city')
-        weather_location(call['arguments']['city'])
+    field = ARG_FIELDS.get(call['name'])
+    if field:
+        if set(call['arguments']) != {field}:
+            raise ValueError('unexpected arguments')
+        (weather_location if field == 'city' else pokemon_slug)(call['arguments'][field])
     elif call['arguments'] != {}:
         raise ValueError('local tools take no arguments')
     return call['name'], call['arguments']
 
-
 def child_limits():
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     resource.setrlimit(resource.RLIMIT_AS, (384 * 1024 ** 2, 384 * 1024 ** 2))
-
 
 def infer(prompt):
     binary, weights = RUNTIME / 'needle', RUNTIME / 'needle3.cact'
@@ -174,10 +218,10 @@ def infer(prompt):
     for name, description in DESCRIPTIONS.items():
         parameters = {'type': 'object', 'properties': {}, 'required': [],
                       'additionalProperties': False}
-        if name == 'get_weather':
-            parameters.update(properties={'city': {'type': 'string', 'minLength': 1,
-                'maxLength': 80, 'description': 'City or postal code as written in the request.'}},
-                required=['city'])
+        field = ARG_FIELDS.get(name)
+        if field:
+            parameters.update(properties={field: {'type': 'string', 'minLength': 1,
+                'maxLength': 80 if field == 'city' else 60, 'description': 'Name as written in the request.'}}, required=[field])
         schemas.append({'type': 'function', 'function': {'name': name,
                         'description': description, 'parameters': parameters}})
     with tempfile.TemporaryDirectory(prefix='.ask-pstv-', dir=HERE) as work:
@@ -206,7 +250,6 @@ def infer(prompt):
                 raise OSError(f'Needle exited with status {process.returncode}; no tool ran.')
         return stdout
 
-
 def main(args):
     if args == ['--examples']:
         print('\n'.join(EXAMPLES))
@@ -217,9 +260,9 @@ def main(args):
         return 2
     try:
         decision = select_tool(infer(args[0]))
-        if (decision and decision[0] == 'get_weather'
-                and decision[1]['city'].casefold() not in args[0].casefold()):
-            raise ValueError('weather city was not present in the request')
+        field = ARG_FIELDS.get(decision[0]) if decision else None
+        if field and decision[1][field].casefold() not in args[0].casefold():
+            raise ValueError('lookup argument was not present in the request')
     except ValueError:
         decision = None
     except subprocess.TimeoutExpired:
@@ -229,19 +272,18 @@ def main(args):
         print(f'PSTV: {exc}')
         return 1
     if decision is None:
-        print('Needle -> no allowed tool\n\nPSTV: I can report local status or weather for a named city.')
+        print('Needle -> no allowed tool\n\nPSTV: I can report local status, weather, or named Pokemon.')
         return 2
     name, arguments = decision
     print(f'Needle -> {name}({json.dumps(arguments, ensure_ascii=True)})\n\nPSTV:')
     try:
         lines = TOOLS[name](**arguments)  # Fixed dispatch; arguments validated above.
     except (OSError, ValueError):
-        print(f'  {name} failed; no retry or fallback. Check connectivity/location if this was weather.')
+        print(f'  {name} failed; no retry or fallback. Check the lookup name, connection, or local cache.')
         return 1
     for line in lines:
         print(f'  {line}')
     return 0
-
 
 if __name__ == '__main__':
     # Convert terminal close/termination to normal unwinding so the child is reaped.

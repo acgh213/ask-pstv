@@ -1,8 +1,42 @@
 # ask-pstv
 
-Ask a Linux-running PlayStation TV about itself—or ask it for real weather—using [Needle 3](https://github.com/cactus-compute/needle) for local tool selection.
+Ask a Linux-running PlayStation TV about itself, get real weather, or pull up a Pokédex card, using [Needle 3](https://github.com/cactus-compute/needle) for local tool selection.
 
-**Working weather demo; still an unreliable general router.** Manual invocation only. One local inference call, at most one validated tool call, deterministic output, then exit. No agent, daemon, web server, or tool chain.
+**Working weather and Pokédex demos; still an unreliable general router.** Manual invocation only. One local inference call, at most one validated tool call, deterministic output, then exit. No agent, daemon, web server, or tool chain.
+
+## A Pokédex in a PlayStation
+
+```sh
+./ask-pstv "tell me about Gengar"
+./ask-pstv "what types and abilities does Pikachu have?"
+./ask-pstv "look up Mr. Mime in the Pokedex"
+```
+
+All three routed and returned real API-backed cards on the PSTV. A recorded cached lookup:
+
+```text
+Needle -> get_pokemon_info({"name": "Gengar"})
+
+PSTV:
+  POKEDEX | GENGAR [PokeAPI #94]
+  types: Ghost / Poison
+  abilities: Cursed Body
+  base stats: HP 60 | Atk 65 | Def 60
+              SpA 130 | SpD 75 | Spe 110
+  source: PokeAPI (cached)
+```
+
+The model supplies only the name. Types, abilities (including hidden abilities), and all six base stats come from [PokeAPI](https://pokeapi.co/docs/v2), then ordinary Python formats the card. These are current API values, **not generation-specific game data**, battle stats, or model-generated strategy. The displayed ID is the PokeAPI Pokémon resource ID; alternate forms may not share the species' National Dex number.
+
+The three complete card requests took **38.18–39.95 seconds** in this run. A fake name, `Definitelynotapokemon`, produced a clean lookup failure, not fabricated facts. Weather in Cheshire still worked with all five schemas available (56.32 seconds in that single regression check). These samples do not establish general routing accuracy.
+
+### Local cache, not a downloader
+
+PokeAPI's [fair-use policy](https://pokeapi.co/docs/v2#fairuse) requests local caching. The first successful lookup makes one HTTPS GET to `https://pokeapi.co/api/v2/pokemon/<validated-name>/`; following lookups use `.pokemon-cache/<name>.json` inside the demo directory. Only the small fields needed for the card are retained. The three actual cached records were **991, 1,020, and 1,223 bytes**. No images, movesets, other URLs in API responses, or extra resources are fetched.
+
+A cached Gengar lookup was also verified with the network-fetch function replaced by a function that raises on any call. The card still rendered. This checks the tool's cache behavior, not an OS-wide network audit of the native model runtime. The cache has no automatic expiry; remove an individual record manually to refresh it. A damaged/mismatched cache record fails closed without an automatic HTTP retry.
+
+Names must be mentioned literally in the prompt, then pass a narrow ASCII slug validator. Conventional spellings `Mr. Mime`/`Mr Mime`, `Farfetch'd`, `Mime Jr.`, and the two Nidoran gender symbols have explicit aliases. Only Gengar, Pikachu and Mr. Mime were hardware-tested in this step. Arbitrary names, numbers, punctuation variants and forms are not promised to work. Numeric Pokédex lookup is not implemented.
 
 ## Try the weather
 
@@ -27,7 +61,7 @@ PSTV:
   temperature: 66 F / 19 C
 ```
 
-That lookup took **31.41 seconds** including inference and the weather request. Paris took **29.06 seconds**; wttr resolved it to Saint-Merri, Ile-de-France, France. These observations are historical, not a live forecast embedded in the README.
+In the earlier four-tool version, that lookup took **31.41 seconds** including inference and the weather request. Paris took **29.06 seconds**; wttr resolved it to Saint-Merri, Ile-de-France, France. These observations are historical, not a live forecast embedded in the README.
 
 ### Cheshire is not France
 
@@ -39,8 +73,9 @@ The demo explicitly maps `Cheshire` and `06410` to `Cheshire, Connecticut, USA` 
 
 The owner explicitly expanded the original local-only experiment to allow one weather service and an eight-layer trial. Current default flags are **`--depth 8 --threads 4 --max 128 --fail-input-overflow`**. The executable and weight file are the same official files as before, not retrained, exported, compiled, patched, or replaced.
 
-The script offers only these four tools:
+The script offers only these five tools:
 
+- `get_pokemon_info({"name": "..."})`: one fixed PokeAPI lookup on a cache miss; deterministic types, abilities and base-stat card.
 - `get_weather({"city": "..."})`: one HTTPS GET to a fixed `https://wttr.in/` origin. Returns resolved location, condition, and Fahrenheit/Celsius temperatures.
 - `get_system_status({})`: `/proc/uptime`, `/proc/meminfo`, `/proc/loadavg`.
 - `get_storage_status({})`: `statvfs` for `/` and `/mnt/vita-card` when mounted. Missing/unmounted card directories are labelled explicitly.
@@ -48,7 +83,7 @@ The script offers only these four tools:
 
 There is no temperature tool; the earlier check found no standard thermal-zone temperature files. No packages or system configuration changes were needed.
 
-Inference remains local. **Weather retrieval is not offline.** wttr.in receives the validated city/location field and the client's public IP, as any direct HTTPS service would. The full prompt is not separately sent. Local status tools use no network. The model does not compose a second prose answer, and the weather response never goes back into the model.
+Inference remains local. **Uncached API lookups are not offline.** wttr.in receives the city/location field; PokeAPI receives the Pokémon-name slug on a cache miss. Each service also sees the client's public IP, as any direct HTTPS service would. The full prompt is not separately sent. Local status tools use no network. The model does not compose a second prose answer, and API responses never go back into the model.
 
 ## Install beside the existing runtime
 
@@ -69,9 +104,10 @@ This repository does not redistribute the engine or weights. The pinned [officia
 
 ## Validation and boundaries
 
-- Exact tool-name allowlist, one call maximum. Local tools require `{}`; weather requires exactly `{"city": string}`.
+- Exact tool-name allowlist, one call maximum. Local tools require `{}`; weather requires exactly `{"city": string}`; Pokédex requires exactly `{"name": string}`.
 - A city must be 1–80 characters, contain only letters/numbers and a small set of location punctuation, and appear literally (case-insensitive) in the prompt. Slashes, query delimiters, control characters, arbitrary URLs, extra arguments, and traversal-like `..` are rejected.
 - City text is URL-encoded into one fixed HTTPS path. No redirects, environment proxies, alternate hosts, IP-geolocation fallback, credentials, or retries. HTTPS certificate verification uses the normal system CA trust. The GET has a **15-second socket timeout**, not a claimed whole-transaction deadline, and a **256 KiB response cap**.
+- Pokémon names are capped at 60 characters and mapped to lowercase ASCII slugs, with only explicit spelling aliases. The fixed PokeAPI endpoint shares the redirect/proxy/TLS/timeout protections; its response/cache cap is **1 MiB**. Returned identity, field shapes, printable safe names, and bounded integer stats are validated before display/cache writes. The model cannot choose a cache path or API URL.
 - The response must contain usable location/condition/temperature fields; displayed fields are size-bounded and printable, preventing terminal-control injection. The returned `weatherUrl` is ignored. A weather failure does not trigger another tool.
 - No shell receives model output. No `eval`, arbitrary command/path selection, dynamic code loading, recursive calls, or follow-up model turn.
 - Duplicate JSON keys, malformed/error responses, multiple calls, unknown names, invalid arguments, non-finite/out-of-range confidence, and suppressed calls cannot dispatch. An empty call list always means refusal, regardless of unused metadata; it is not treated as an independent engine attestation.
@@ -112,14 +148,25 @@ The successful weather calls reported **4.4 decode tokens/s**, **10.6–10.8 pre
 python3 -B -m unittest -v test_demo
 ```
 
-Thirteen stdlib tests passed on the host and PSTV. Network test fixtures are synthetic and explicitly separate from real-weather evidence. They cover fixed URL construction, location validation/aliases, unexpected Cheshire resolution, oversized responses, redirect refusal, fabricated-city rejection, dispatch validation, and child cleanup.
+Sixteen stdlib tests passed on the host and PSTV. Network test fixtures are synthetic and explicitly separate from real-API evidence. They cover fixed URL construction, location/name validation and aliases, unexpected Cheshire resolution, oversized responses, redirect refusal, fabricated-argument rejection, dispatch validation, child cleanup, Pokémon card formatting, cache reuse, and corrupt-cache identity rejection.
 
+- [Pokédex hardware acceptance](evidence/pokedex-acceptance.json): three real cards, a fake-name failure, and a weather regression check; all five targeted checks passed.
+- [Model-only name probes](evidence/pokedex-name-probes.json) and [cache verification](evidence/pokedex-cache-check.json).
+- [Current host tests](evidence/tests-pokedex-host.txt) / [PSTV tests](evidence/tests-pokedex-pstv.txt).
 - [Weather hardware records](evidence/verification-weather-depth8.json): four checks, raw engine responses, literal results, measured wall time, and script hash.
 - [Eight-layer status comparison](evidence/verification-status-depth8.json): eight original prompts with only the original three schemas.
-- [Current host tests](evidence/tests-weather-host.txt) / [PSTV tests](evidence/tests-weather-pstv.txt).
+- [Earlier weather-version host tests](evidence/tests-weather-host.txt) / [PSTV tests](evidence/tests-weather-pstv.txt).
 - [Original depth-2 examples](evidence/examples.json), [initial schema attempt](evidence/examples-initial.json), [raw failure diagnostics](evidence/raw-diagnostics.json).
-- [Original runtime provenance/measurements](evidence/runtime.json), [earlier post-review cancellation/smoke check](evidence/final-smoke.json). These older files describe their earlier script revision, not the current four-tool program.
+- [Original runtime provenance/measurements](evidence/runtime.json), [earlier post-review cancellation/smoke check](evidence/final-smoke.json). These older files describe their earlier script revision, not the current five-tool program.
 
 The [first version](https://github.com/acgh213/ask-pstv/tree/338e194a784fd22e156a6862b4b5087a6cb3fcc7) was deliberately local-only at depth 2. The later weather exception and depth-8 experiment were explicitly requested; the earlier failure records remain intact.
 
-**It can fetch real weather when the model picks the right tool. It still cannot be trusted to route arbitrary requests correctly.**
+**It can fetch real weather and Pokémon facts when the model picks the right tool. It still cannot be trusted to route arbitrary requests correctly.**
+
+## Agreed next toys
+
+1. Pokédex: implemented and hardware-tested in this revision.
+2. Dice goblin: next; validated numeric arguments and real local random rolls, not model-invented results.
+3. Tiny text adventure: after dice; deterministic rooms/rules, model only proposes a bounded action.
+
+The latter two are not implemented yet. This revision closes only the Pokédex step.

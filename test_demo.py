@@ -81,6 +81,58 @@ class SafetyTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(self.mod['main'](['write a poem']), 2)
 
+    def test_pokemon_name_arguments_and_aliases(self):
+        for name, slug in [('Gengar', 'gengar'), ('Pikachu', 'pikachu'), ('Mr. Mime', 'mr-mime')]:
+            raw = json.dumps(response([call('get_pokemon_info', {'name': name})]))
+            self.assertEqual(self.mod['select_tool'](raw), ('get_pokemon_info', {'name': name}))
+            self.assertEqual(self.mod['pokemon_slug'](name), slug)
+        for name in ['../gengar', 'https://evil.example', 'gengar?x=1', '', 'x'*61, None, '25', 'Gengar\n']:
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                self.mod['pokemon_slug'](name)
+        with self.assertRaises(ValueError):
+            self.mod['select_tool'](json.dumps(response([call('get_pokemon_info', {'name':'Gengar', 'url':'x'})])))
+
+    def test_pokemon_lookup_caches_and_formats_api_data(self):
+        import tempfile
+        from unittest.mock import MagicMock
+        # Synthetic boundary fixture; not a claim about game data.
+        payload = {'id': 94, 'name': 'gengar',
+                   'types': [{'slot': 1, 'type': {'name': 'ghost'}}],
+                   'abilities': [{'is_hidden': False, 'ability': {'name': 'fixture-ability'}}],
+                   'stats': [{'base_stat': 10, 'stat': {'name': name}}
+                             for name in ['hp','attack','defense','special-attack','special-defense','speed']]}
+        handle = MagicMock()
+        handle.__enter__.return_value = handle
+        handle.read.return_value = json.dumps(payload).encode()
+        opener = MagicMock()
+        opener.open.return_value = handle
+        with tempfile.TemporaryDirectory(dir=SCRIPT.parent) as tmp, \
+                patch.dict(self.mod['get_pokemon_info'].__globals__, HERE=Path(tmp)), \
+                patch('urllib.request.build_opener', return_value=opener):
+            first = self.mod['get_pokemon_info']('Gengar')
+            self.assertEqual(opener.open.call_args.args[0].full_url, 'https://pokeapi.co/api/v2/pokemon/gengar/')
+            self.assertIn('GENGAR', first[0])
+            self.assertTrue(any('HP 10' in line for line in first))
+            self.assertTrue(any('fetched' in line for line in first))
+            second = self.mod['get_pokemon_info']('Gengar')
+            self.assertTrue(any('cached' in line for line in second))
+            self.assertEqual(opener.open.call_count, 1)
+            cache = Path(tmp)/'.pokemon-cache/gengar.json'
+            damaged = json.loads(cache.read_text()); damaged['name'] = 'pikachu'
+            cache.write_text(json.dumps(damaged))
+            with self.assertRaises(OSError):
+                self.mod['get_pokemon_info']('Gengar')
+            self.assertEqual(opener.open.call_count, 1)
+
+    def test_pokemon_cannot_send_a_name_not_in_prompt(self):
+        def forbidden(**_):
+            self.fail('invented name must not reach network')
+        raw = json.dumps(response([call('get_pokemon_info', {'name': 'Gengar'})]))
+        with patch.dict(self.mod['main'].__globals__, infer=lambda _: raw,
+                        TOOLS={'get_pokemon_info': forbidden}):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(self.mod['main'](['write a poem']), 2)
+
     def test_empty_calls_refused(self):
         self.assertIsNone(self.mod['select_tool'](json.dumps(response([]))))
 

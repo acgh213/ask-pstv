@@ -1,0 +1,24 @@
+{
+  "cached_lookup_with_network_fetch_disabled": [
+    "POKEDEX | GENGAR [PokeAPI #94]",
+    "types: Ghost / Poison",
+    "abilities: Cursed Body",
+    "base stats: HP 60 | Atk 65 | Def 60",
+    "            SpA 130 | SpD 75 | Spe 110",
+    "source: PokeAPI (cached)"
+  ],
+  "cache_files": [
+    {
+      "name": "gengar.json",
+      "bytes": 991
+    },
+    {
+      "name": "mr-mime.json",
+      "bytes": 1223
+    },
+    {
+      "name": "pikachu.json",
+      "bytes": 1020
+    }
+  ]
+}

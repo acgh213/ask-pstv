@@ -1,0 +1,23 @@
+[
+  {
+    "prompt": "tell me about Gengar",
+    "wall_s": 33.47134714003187,
+    "exit_code": 0,
+    "stdout": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_pokemon_info\",\"arguments\":{\"name\":\"Gengar\"}}],\"suppressed_calls\":[],\"reasoning\":\"'Gengar' is the name for Pokemon info.\",\"confidence\":0.9621,\"prefill_tps\":9.4,\"decode_tps\":4.3,\"peak_ram_mb\":77.3,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n",
+    "stderr": ""
+  },
+  {
+    "prompt": "what types and abilities does Pikachu have?",
+    "wall_s": 33.28855757700512,
+    "exit_code": 0,
+    "stdout": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_pokemon_info\",\"arguments\":{\"name\":\"Pikachu\"}}],\"suppressed_calls\":[],\"reasoning\":\"name 'Pikachu' from query.\",\"confidence\":0.9930,\"prefill_tps\":9.7,\"decode_tps\":4.3,\"peak_ram_mb\":77.1,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n",
+    "stderr": ""
+  },
+  {
+    "prompt": "look up Mr. Mime in the Pokedex",
+    "wall_s": 38.19529949699063,
+    "exit_code": 0,
+    "stdout": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_pokemon_info\",\"arguments\":{\"name\":\"Mr. Mime\"}}],\"suppressed_calls\":[],\"reasoning\":\"'Mr. Mime' is the name. get_pokemon_info returns the Pokedex's details.\",\"confidence\":1.0000,\"prefill_tps\":9.8,\"decode_tps\":4.2,\"peak_ram_mb\":77.2,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n",
+    "stderr": ""
+  }
+]

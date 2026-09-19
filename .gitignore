@@ -4,3 +4,4 @@ __pycache__/
 needle
 *.cact
 blog-draft.md
+.pokemon-cache/
