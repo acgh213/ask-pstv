@@ -174,6 +174,23 @@ With all four schemas present, the separate weather checks found:
 
 The successful weather calls reported **4.4 decode tokens/s**, **10.6–10.8 prefill tokens/s**, and **77.2–77.3 MB peak RAM**. These are engine-reported figures, not independently token-counted or RSS-sampled in this follow-up. Timings are whole requests, not isolated model-load times. This is a handful of canned examples, not a general accuracy benchmark.
 
+## What a decision costs
+
+One prompt, the official binary, measured on the PSTV ([raw evidence](evidence/scale-probe.json)):
+
+- **1 tool**, depth 8, max 128, 4 threads: **13.1 s** — 237 B of schema, 5.2 decode t/s, 77.3 MB
+- **3 tools**, same flags: **21.2 s** — 743 B, 4.8 decode t/s, 77.2 MB
+- **6 tools**, same flags: **52.9 s** — 1943 B, 3.6 decode t/s, 77.2 MB
+- 6 tools, **max 8** instead of 128: **40.7 s** — capping the prose tail saves 12.2 s
+- 6 tools, **depth 2** instead of 8: **52.5 s** — depth costs nothing and buys nothing
+- 6 tools, **2 threads** instead of 4: **90.5 s** — keep `--threads 4`
+
+Tool count is the price, and it climbs steadily: **+8.1 s from 1 tool to 3**, then **+31.7 s from 3 tools to 6** — roughly ten seconds for every tool added above three. The same slope appears in this evening's CLI runs: 3 tools ≈ 21 s, 4 ≈ 30 s, 5 ≈ 39 s, 6 ≈ 52 s.
+
+Cactus's tool-design guide states that *five or fewer tools render directly; above that, retrieval engages — every schema is embedded, the request is embedded, only the five closest tools enter the context, and an unselected tool is unreachable rather than merely unlikely.* This demo declares six. **We cannot yet confirm that boundary is active on this armv7 build:** cost grows smoothly straight through the five-tool step with no visible discontinuity, which is what you would see either way. Two observations would settle it, and neither has been run — a measurable saving from `--tool-index` (the repository flag that caches a tool set's embeddings), and a request for one specific tool in a large set being **refused** rather than misrouted.
+
+Peak RAM is **77.0–77.3 MB in every configuration** — schema size, depth and thread count move nothing; the weights are the whole cost. Against ~425 MiB available, memory is not the constraint. Latency is.
+
 ## What six tools changed
 
 The same eight status prompts were rerun with all six tools available. The score stayed at **4/8** — but the failures moved, and two of them are new:
@@ -192,7 +209,7 @@ Two uncomfortable lessons, both worth keeping:
 - **Argument grounding is not intent.** “Awake” is literally in the prompt, so the wrapper passed it — and a real weather service cheerfully found a place for an adjective. Grounding blocks invented arguments, not wrong ones, and a fuzzy geocoder will always answer something.
 - **More tools mean more ways to be wrong, not fewer.** The count did not improve; the mistakes got more creative, and every call got slower.
 
-Those calls took **48.4–56.0 seconds** each, against **19.5–22.3 seconds** for the same prompts with only three schemas. Engine-reported prefill fell to **7.7–8.0 tokens/s** (from 12.1) and decode to **3.8–4.3 tokens/s** (from 4.7–4.8); peak RAM stayed at **77.2 MB**. Bigger tool schemas cost real time on four old ARM cores. Whether the decode drop is schema size, thermal state, or something else is not established here — only that the later runs were slower.
+Those calls took **48.4–56.0 seconds** each, against **19.5–22.3 seconds** for the same prompts with only three schemas. Engine-reported prefill fell to **7.7–8.0 tokens/s** (from 12.1) and decode to **3.8–4.3 tokens/s** (from 4.7–4.8); peak RAM stayed at **77.2 MB**. The cost section above shows the price is tool count — about ten seconds per tool added above three — but does not yet prove the mechanism, and the engine's reported prefill rate does not reconcile cleanly with the measured wall time either way.
 
 ## Evidence and tests
 

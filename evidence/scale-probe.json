@@ -1,0 +1,197 @@
+[
+  {
+    "config": "6 tools  depth 8  max 128  4 threads",
+    "tools": 6,
+    "depth": 8,
+    "max": 128,
+    "threads": 4,
+    "wall_s": 52.89516703400295,
+    "schema_bytes": 1943,
+    "returncode": 0,
+    "engine": {
+      "type": "call",
+      "success": true,
+      "error": null,
+      "error_code": null,
+      "reason": null,
+      "function_calls": [
+        {
+          "name": "get_kernel_info",
+          "arguments": {}
+        }
+      ],
+      "suppressed_calls": [],
+      "reasoning": "User asks for Linux kernel version. get_kernel_info returns Linux kernel version and processor architecture.",
+      "confidence": 1.0,
+      "prefill_tps": 5.2,
+      "decode_tps": 3.6,
+      "peak_ram_mb": 77.2,
+      "validation": {
+        "ungrounded": [],
+        "negation": false
+      }
+    },
+    "stderr": ""
+  },
+  {
+    "config": "6 tools  depth 8  max 8    4 threads",
+    "tools": 6,
+    "depth": 8,
+    "max": 8,
+    "threads": 4,
+    "wall_s": 40.683250425965525,
+    "schema_bytes": 1943,
+    "returncode": 0,
+    "engine": {
+      "type": "call",
+      "success": false,
+      "error": "tool call truncated: token budget exhausted",
+      "error_code": "truncated",
+      "reason": "runtime_failure",
+      "function_calls": [],
+      "suppressed_calls": [],
+      "reasoning": null,
+      "confidence": 0.9551,
+      "prefill_tps": 7.7,
+      "decode_tps": 4.1,
+      "peak_ram_mb": 77.3
+    },
+    "stderr": ""
+  },
+  {
+    "config": "6 tools  depth 2  max 128  4 threads",
+    "tools": 6,
+    "depth": 2,
+    "max": 128,
+    "threads": 4,
+    "wall_s": 52.49181063094875,
+    "schema_bytes": 1943,
+    "returncode": 0,
+    "engine": {
+      "type": "call",
+      "success": true,
+      "error": null,
+      "error_code": null,
+      "reason": null,
+      "function_calls": [
+        {
+          "name": "get_kernel_info",
+          "arguments": {}
+        }
+      ],
+      "suppressed_calls": [],
+      "reasoning": "User asks for Linux kernel version. get_kernel_info returns Linux kernel version and processor architecture.",
+      "confidence": 1.0,
+      "prefill_tps": 7.8,
+      "decode_tps": 3.5,
+      "peak_ram_mb": 77.0,
+      "validation": {
+        "ungrounded": [],
+        "negation": false
+      }
+    },
+    "stderr": ""
+  },
+  {
+    "config": "6 tools  depth 8  max 128  2 threads",
+    "tools": 6,
+    "depth": 8,
+    "max": 128,
+    "threads": 2,
+    "wall_s": 90.4942740740371,
+    "schema_bytes": 1943,
+    "returncode": 0,
+    "engine": {
+      "type": "call",
+      "success": true,
+      "error": null,
+      "error_code": null,
+      "reason": null,
+      "function_calls": [
+        {
+          "name": "get_kernel_info",
+          "arguments": {}
+        }
+      ],
+      "suppressed_calls": [],
+      "reasoning": "User asks for Linux kernel version. get_kernel_info returns Linux kernel version and processor architecture.",
+      "confidence": 1.0,
+      "prefill_tps": 4.1,
+      "decode_tps": 2.4,
+      "peak_ram_mb": 77.2,
+      "validation": {
+        "ungrounded": [],
+        "negation": false
+      }
+    },
+    "stderr": ""
+  },
+  {
+    "config": "3 tools  depth 8  max 128  4 threads",
+    "tools": 3,
+    "depth": 8,
+    "max": 128,
+    "threads": 4,
+    "wall_s": 21.191049625980668,
+    "schema_bytes": 743,
+    "returncode": 0,
+    "engine": {
+      "type": "call",
+      "success": true,
+      "error": null,
+      "error_code": null,
+      "reason": null,
+      "function_calls": [
+        {
+          "name": "get_kernel_info",
+          "arguments": {}
+        }
+      ],
+      "suppressed_calls": [],
+      "reasoning": "'what kernel are running' -> get_kernel_info. Zero-argument tool.",
+      "confidence": 1.0,
+      "prefill_tps": 11.8,
+      "decode_tps": 4.8,
+      "peak_ram_mb": 77.2,
+      "validation": {
+        "ungrounded": [],
+        "negation": false
+      }
+    },
+    "stderr": ""
+  },
+  {
+    "config": "1 tool   depth 8  max 128  4 threads",
+    "tools": 1,
+    "depth": 8,
+    "max": 128,
+    "threads": 4,
+    "wall_s": 13.07328662200598,
+    "schema_bytes": 237,
+    "returncode": 0,
+    "engine": {
+      "type": "call",
+      "success": true,
+      "error": null,
+      "error_code": null,
+      "reason": null,
+      "function_calls": [
+        {
+          "name": "get_kernel_info",
+          "arguments": {}
+        }
+      ],
+      "suppressed_calls": [],
+      "reasoning": "'what kernel' -> get_kernel_info tool. Zero arguments.",
+      "confidence": 1.0,
+      "prefill_tps": 14.5,
+      "decode_tps": 5.2,
+      "peak_ram_mb": 77.3,
+      "validation": {
+        "ungrounded": [],
+        "negation": false
+      }
+    },
+    "stderr": ""
+  }
+]
