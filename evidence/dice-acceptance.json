@@ -1,0 +1,71 @@
+[
+  {
+    "prompt": "roll three twenty-sided dice",
+    "expected_roll": "3d20",
+    "exit_code": 0,
+    "headline": "Needle -> roll_dice({\"count\": 3, \"sides\": 20})",
+    "stdout": "Needle -> roll_dice({\"count\": 3, \"sides\": 20})\n\nPSTV:\n  rolled 3d20\n  rolls: 7, 17, 13\n  total: 37\n",
+    "stderr": "",
+    "wall_s": 52.73422154999571,
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": true
+  },
+  {
+    "prompt": "roll three twenty-sided dice",
+    "expected_roll": "3d20",
+    "exit_code": 0,
+    "headline": "Needle -> roll_dice({\"count\": 3, \"sides\": 20})",
+    "stdout": "Needle -> roll_dice({\"count\": 3, \"sides\": 20})\n\nPSTV:\n  rolled 3d20\n  rolls: 15, 4, 14\n  total: 33\n",
+    "stderr": "",
+    "wall_s": 52.74895733100129,
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": true
+  },
+  {
+    "prompt": "roll four six-sided dice",
+    "expected_roll": "4d6",
+    "exit_code": 0,
+    "headline": "Needle -> roll_dice({\"count\": 4, \"sides\": 6})",
+    "stdout": "Needle -> roll_dice({\"count\": 4, \"sides\": 6})\n\nPSTV:\n  rolled 4d6\n  rolls: 6, 1, 3, 4\n  total: 14\n",
+    "stderr": "",
+    "wall_s": 53.865620374970604,
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": true
+  },
+  {
+    "prompt": "roll 2d6",
+    "expected_roll": null,
+    "exit_code": 2,
+    "headline": "Needle -> no allowed tool",
+    "stdout": "Needle -> no allowed tool\n\nPSTV: I can report local status, weather, named Pokemon, or roll dice.\n",
+    "stderr": "",
+    "wall_s": 50.3007986730081,
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "refused_cleanly": true,
+    "passed": true
+  },
+  {
+    "prompt": "roll thirteen ten-sided dice",
+    "expected_roll": null,
+    "exit_code": 2,
+    "headline": "Needle -> no allowed tool",
+    "stdout": "Needle -> no allowed tool\n\nPSTV: I can report local status, weather, named Pokemon, or roll dice.\n",
+    "stderr": "",
+    "wall_s": 53.82857917400543,
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "refused_cleanly": true,
+    "passed": true
+  },
+  {
+    "prompt": "roll some dice",
+    "expected_roll": null,
+    "exit_code": 2,
+    "headline": "Needle -> no allowed tool",
+    "stdout": "Needle -> no allowed tool\n\nPSTV: I can report local status, weather, named Pokemon, or roll dice.\n",
+    "stderr": "",
+    "wall_s": 52.189353528025094,
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "refused_cleanly": true,
+    "passed": true
+  }
+]

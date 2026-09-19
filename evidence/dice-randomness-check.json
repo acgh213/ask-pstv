@@ -1,0 +1,16 @@
+{
+  "two_identical_prompts_produced_identical_rolls": false,
+  "roll_lines": [
+    "rolls: 7, 17, 13",
+    "rolls: 15, 4, 14"
+  ],
+  "passed": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f"
+}

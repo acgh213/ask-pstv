@@ -133,6 +133,81 @@ class SafetyTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(self.mod['main'](['write a poem']), 2)
 
+    def test_dice_arguments_are_strict(self):
+        for args in [{'count': 3, 'sides': 20}, {'count': 1, 'sides': 100}, {'count': 20, 'sides': 2}]:
+            raw = json.dumps(response([call('roll_dice', args)]))
+            self.assertEqual(self.mod['select_tool'](raw), ('roll_dice', args))
+        for args in [{}, {'count': 3}, {'sides': 20}, {'count': 0, 'sides': 6}, {'count': 21, 'sides': 6},
+                     {'count': 3, 'sides': 1}, {'count': 3, 'sides': 101}, {'count': '3', 'sides': 20},
+                     {'count': 3.0, 'sides': 20}, {'count': True, 'sides': 20}, {'count': -1, 'sides': 6},
+                     {'count': 3, 'sides': 20, 'modifier': 2}]:
+            with self.subTest(args=args), self.assertRaises(ValueError):
+                self.mod['select_tool'](json.dumps(response([call('roll_dice', args)])))
+
+    def test_dice_rolls_are_real_random_and_bounded(self):
+        seen = set()
+        for _ in range(200):
+            lines = self.mod['roll_dice'](20, 2)
+            self.assertEqual(lines[0], 'rolled 20d2')
+            faces = [int(face) for face in lines[1].removeprefix('rolls: ').split(', ')]
+            self.assertEqual(len(faces), 20)
+            self.assertTrue(all(1 <= face <= 2 for face in faces))
+            self.assertEqual(lines[2], f'total: {sum(faces)}')
+            seen.update(faces)
+        # A constant or model-invented roll would never touch both faces.
+        self.assertEqual(seen, {1, 2})
+
+    def test_dice_numbers_must_be_mentioned_in_the_prompt(self):
+        mentioned = self.mod['mentioned_arguments']
+        for prompt, args in [('roll three twenty-sided dice', {'count': 3, 'sides': 20}),
+                             ('roll 3d20', {'count': 3, 'sides': 20}),
+                             ('roll two six-sided dice', {'count': 2, 'sides': 6}),
+                             ('roll 2 d6 please', {'count': 2, 'sides': 6}),
+                             ('ROLL 2D6', {'count': 2, 'sides': 6})]:
+            with self.subTest(prompt=prompt):
+                self.assertTrue(mentioned('roll_dice', args, prompt))
+        for prompt, args in [('roll some dice', {'count': 3, 'sides': 20}),
+                             ('roll 3d100', {'count': 3, 'sides': 20}),
+                             ('roll three coins', {'count': 3, 'sides': 6}),
+                             ('roll 6d6', {'count': 3, 'sides': 6})]:
+            with self.subTest(prompt=prompt):
+                self.assertFalse(mentioned('roll_dice', args, prompt))
+        # String arguments keep the original literal, case-insensitive rule.
+        self.assertTrue(mentioned('get_weather', {'city': 'Paris'}, 'weather in paris?'))
+        self.assertFalse(mentioned('get_weather', {'city': 'Paris'}, 'weather in Berlin?'))
+        self.assertTrue(mentioned('get_pokemon_info', {'name': 'Mr. Mime'}, 'look up mr. mime'))
+
+    def test_dice_notation_must_match_the_roll(self):
+        agrees = self.mod['notation_agrees']
+        self.assertTrue(agrees('roll_dice', {'count': 2, 'sides': 6}, 'roll 2d6'))
+        self.assertTrue(agrees('roll_dice', {'count': 1, 'sides': 20}, 'roll a d20'))
+        self.assertTrue(agrees('roll_dice', {'count': 3, 'sides': 20}, 'roll three twenty-sided dice'))
+        self.assertTrue(agrees('get_weather', {'city': 'Paris'}, 'weather in Paris'))
+        for prompt, args in [('roll 2d6', {'count': 2, 'sides': 2}),
+                             ('roll 4d6', {'count': 4, 'sides': 2}),
+                             ('roll a d20', {'count': 20, 'sides': 2}),
+                             ('roll 2d6 and 1d20', {'count': 2, 'sides': 6})]:
+            with self.subTest(prompt=prompt):
+                self.assertFalse(agrees('roll_dice', args, prompt))
+
+    def test_misread_dice_notation_is_refused_not_rolled(self):
+        def forbidden(**_):
+            self.fail('a mismatched notation roll must not happen')
+        raw = json.dumps(response([call('roll_dice', {'count': 2, 'sides': 2})]))
+        with patch.dict(self.mod['main'].__globals__, infer=lambda _: raw,
+                        TOOLS={'roll_dice': forbidden}):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(self.mod['main'](['roll 2d6']), 2)
+
+    def test_dice_cannot_roll_numbers_not_in_the_prompt(self):
+        def forbidden(**_):
+            self.fail('invented roll must not happen')
+        raw = json.dumps(response([call('roll_dice', {'count': 20, 'sides': 100})]))
+        with patch.dict(self.mod['main'].__globals__, infer=lambda _: raw,
+                        TOOLS={'roll_dice': forbidden}):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(self.mod['main'](['roll dice please']), 2)
+
     def test_empty_calls_refused(self):
         self.assertIsNone(self.mod['select_tool'](json.dumps(response([]))))
 

@@ -1,8 +1,38 @@
 # ask-pstv
 
-Ask a Linux-running PlayStation TV about itself, get real weather, or pull up a Pokédex card, using [Needle 3](https://github.com/cactus-compute/needle) for local tool selection.
+Ask a Linux-running PlayStation TV about itself, get real weather, pull up a Pokédex card, or roll real dice, using [Needle 3](https://github.com/cactus-compute/needle) for local tool selection.
 
-**Working weather and Pokédex demos; still an unreliable general router.** Manual invocation only. One local inference call, at most one validated tool call, deterministic output, then exit. No agent, daemon, web server, or tool chain.
+**Working weather, Pokédex and dice demos; still an unreliable general router.** Manual invocation only. One local inference call, at most one validated tool call, deterministic output, then exit. No agent, daemon, web server, or tool chain.
+
+## A dice goblin
+
+```sh
+./ask-pstv "roll three twenty-sided dice"
+./ask-pstv "roll four six-sided dice"
+```
+
+Recorded on the PSTV:
+
+```text
+Needle -> roll_dice({"count": 3, "sides": 20})
+
+PSTV:
+  rolled 3d20
+  rolls: 7, 17, 13
+  total: 37
+```
+
+The model supplies `count` and `sides`. `secrets.randbelow` produces the faces locally, and the model never sees or invents a result. Two identical prompts rolled `7, 17, 13` and `15, 4, 14`, which is the whole point: real randomness, not a language model guessing dice.
+
+Spelled-out numbers work: `three twenty-sided` and `four six-sided` both produced exactly the requested roll. **Dice notation does not.** Asked for `2d6` she answered `count 2, sides 2`; `4d6` became `count 4, sides 2` ("sides defaults to 2"); `d20` came back as `count 20, sides 2`. Raw responses are in the probe evidence below.
+
+The wrapper turns those misreads into refusals instead of wrong rolls:
+
+- Every number must appear in the request as digits or as an English word. `roll thirteen ten-sided dice` (read as `3`) and `roll 4d6` (sides 2) are refused rather than rolled.
+- If the request contains dice notation, the chosen roll must match it. `roll 2d6` — where one digit grounds both fields — is refused rather than rolled as 2d2.
+- `roll some dice` states no numbers. She proposed `count 3, sides 3`, and the engine's own grounding check suppressed it; the wrapper also refuses.
+
+Accepted range is **1–20 dice, 2–100 sides**. No modifiers, exploding dice, keep-highest, or advantage. **Notation is effectively unsupported — say the numbers.** All six dice checks passed; each call took **50.3–53.9 seconds**.
 
 ## A Pokédex in a PlayStation
 
@@ -73,8 +103,9 @@ The demo explicitly maps `Cheshire` and `06410` to `Cheshire, Connecticut, USA` 
 
 The owner explicitly expanded the original local-only experiment to allow one weather service and an eight-layer trial. Current default flags are **`--depth 8 --threads 4 --max 128 --fail-input-overflow`**. The executable and weight file are the same official files as before, not retrained, exported, compiled, patched, or replaced.
 
-The script offers only these five tools:
+The script offers only these six tools:
 
+- `roll_dice({"count": N, "sides": M})`: real local randomness from `secrets` on validated integer arguments; the model never supplies a face value.
 - `get_pokemon_info({"name": "..."})`: one fixed PokeAPI lookup on a cache miss; deterministic types, abilities and base-stat card.
 - `get_weather({"city": "..."})`: one HTTPS GET to a fixed `https://wttr.in/` origin. Returns resolved location, condition, and Fahrenheit/Celsius temperatures.
 - `get_system_status({})`: `/proc/uptime`, `/proc/meminfo`, `/proc/loadavg`.
@@ -98,13 +129,14 @@ pstv-needle-feasibility-2026-09-19/
     └── test_demo.py
 ```
 
-Copy the executable `ask-pstv` into this layout; `test_demo.py` is optional. No installer, background process, service, API, socket listener, autostart, Home Assistant, or voice interface. `--examples` only prints eight prompts; it does not run a suite. The whole application, including schemas and tools, is in one script.
+Copy the executable `ask-pstv` into this layout; `test_demo.py` is optional. No installer, background process, service, API, socket listener, autostart, Home Assistant, or voice interface. `--examples` only prints nine prompts; it does not run a suite. The whole application, including schemas and tools, is in one script.
 
 This repository does not redistribute the engine or weights. The pinned [official model repository](https://huggingface.co/Cactus-Compute/needle3/tree/b274efcb211a9eef48c9a88da4b43bd569696a39) contains `linux-armv7/needle` and `needle3.cact`; artifact sizes and hashes are in [runtime.json](evidence/runtime.json). Execution depth does not shrink the full weight file on disk.
 
 ## Validation and boundaries
 
-- Exact tool-name allowlist, one call maximum. Local tools require `{}`; weather requires exactly `{"city": string}`; Pokédex requires exactly `{"name": string}`.
+- Exact tool-name allowlist, one call maximum. Local tools require `{}`; weather requires exactly `{"city": string}`; Pokédex exactly `{"name": string}`; dice exactly `{"count": int, "sides": int}`. Booleans, floats, numeric strings, negative values and out-of-range values are rejected by type and bounds, not coerced.
+- Every argument must appear in the request: strings literally (case-insensitive), numbers as digits or an English number word. Dice notation typed by the user must match the roll that was chosen.
 - A city must be 1–80 characters, contain only letters/numbers and a small set of location punctuation, and appear literally (case-insensitive) in the prompt. Slashes, query delimiters, control characters, arbitrary URLs, extra arguments, and traversal-like `..` are rejected.
 - City text is URL-encoded into one fixed HTTPS path. No redirects, environment proxies, alternate hosts, IP-geolocation fallback, credentials, or retries. HTTPS certificate verification uses the normal system CA trust. The GET has a **15-second socket timeout**, not a claimed whole-transaction deadline, and a **256 KiB response cap**.
 - Pokémon names are capped at 60 characters and mapped to lowercase ASCII slugs, with only explicit spelling aliases. The fixed PokeAPI endpoint shares the redirect/proxy/TLS/timeout protections; its response/cache cap is **1 MiB**. Returned identity, field shapes, printable safe names, and bounded integer stats are validated before display/cache writes. The model cannot choose a cache path or API URL.
@@ -142,14 +174,38 @@ With all four schemas present, the separate weather checks found:
 
 The successful weather calls reported **4.4 decode tokens/s**, **10.6–10.8 prefill tokens/s**, and **77.2–77.3 MB peak RAM**. These are engine-reported figures, not independently token-counted or RSS-sampled in this follow-up. Timings are whole requests, not isolated model-load times. This is a handful of canned examples, not a general accuracy benchmark.
 
+## What six tools changed
+
+The same eight status prompts were rerun with all six tools available. The score stayed at **4/8** — but the failures moved, and two of them are new:
+
+1. “how are you doing?” → system status, pass.
+2. “how long have you been awake?” → **weather**: `get_weather({"city": "Awake"})`, which wttr.in resolved to Avakpe, Volta, Ghana and answered with real weather. Exit 0. Fail.
+3. “how much memory is available?” → system status, pass.
+4. “how much room do you have left?” → system status instead of storage, fail.
+5. “show me the disk usage” → system status instead of storage, fail.
+6. “what kernel are you running?” → kernel info, pass.
+7. “what architecture are you?” → kernel info, **pass** (this one failed with three schemas).
+8. “write me a love poem about the moon” → **Pokédex**: `get_pokemon_info({"name": "moon"})`, which failed at the API. Exit 1. Fail.
+
+Two uncomfortable lessons, both worth keeping:
+
+- **Argument grounding is not intent.** “Awake” is literally in the prompt, so the wrapper passed it — and a real weather service cheerfully found a place for an adjective. Grounding blocks invented arguments, not wrong ones, and a fuzzy geocoder will always answer something.
+- **More tools mean more ways to be wrong, not fewer.** The count did not improve; the mistakes got more creative, and every call got slower.
+
+Those calls took **48.4–56.0 seconds** each, against **19.5–22.3 seconds** for the same prompts with only three schemas. Engine-reported prefill fell to **7.7–8.0 tokens/s** (from 12.1) and decode to **3.8–4.3 tokens/s** (from 4.7–4.8); peak RAM stayed at **77.2 MB**. Bigger tool schemas cost real time on four old ARM cores. Whether the decode drop is schema size, thermal state, or something else is not established here — only that the later runs were slower.
+
 ## Evidence and tests
 
 ```sh
 python3 -B -m unittest -v test_demo
 ```
 
-Sixteen stdlib tests passed on the host and PSTV. Network test fixtures are synthetic and explicitly separate from real-API evidence. They cover fixed URL construction, location/name validation and aliases, unexpected Cheshire resolution, oversized responses, redirect refusal, fabricated-argument rejection, dispatch validation, child cleanup, Pokémon card formatting, cache reuse, and corrupt-cache identity rejection.
+Twenty-two stdlib tests passed on the host and PSTV. Network test fixtures are synthetic and explicitly separate from real-API evidence. They cover fixed URL construction, location/name validation and aliases, unexpected Cheshire resolution, oversized responses, redirect refusal, fabricated-argument rejection, number grounding, dice-notation agreement, integer type/bounds rejection, dispatch validation, child cleanup, Pokémon card formatting, cache reuse, and corrupt-cache identity rejection.
 
+- [Dice hardware acceptance](evidence/dice-acceptance.json): three requested rolls and three refusals, all six checks passed.
+- [Dice randomness check](evidence/dice-randomness-check.json): two identical prompts, two different results.
+- [Dice model-only probes](evidence/pokedex-dice-probes.json) and [second probe batch](evidence/dice-probes-2.json): raw engine responses showing the notation misreads.
+- [Six-tool routing regression](evidence/routing-6tools.json): eight original prompts with all six schemas; 4/8, with the two new failure modes.
 - [Pokédex hardware acceptance](evidence/pokedex-acceptance.json): three real cards, a fake-name failure, and a weather regression check; all five targeted checks passed.
 - [Model-only name probes](evidence/pokedex-name-probes.json) and [cache verification](evidence/pokedex-cache-check.json).
 - [Current host tests](evidence/tests-pokedex-host.txt) / [PSTV tests](evidence/tests-pokedex-pstv.txt).
@@ -157,7 +213,7 @@ Sixteen stdlib tests passed on the host and PSTV. Network test fixtures are synt
 - [Eight-layer status comparison](evidence/verification-status-depth8.json): eight original prompts with only the original three schemas.
 - [Earlier weather-version host tests](evidence/tests-weather-host.txt) / [PSTV tests](evidence/tests-weather-pstv.txt).
 - [Original depth-2 examples](evidence/examples.json), [initial schema attempt](evidence/examples-initial.json), [raw failure diagnostics](evidence/raw-diagnostics.json).
-- [Original runtime provenance/measurements](evidence/runtime.json), [earlier post-review cancellation/smoke check](evidence/final-smoke.json). These older files describe their earlier script revision, not the current five-tool program.
+- [Original runtime provenance/measurements](evidence/runtime.json), [earlier post-review cancellation/smoke check](evidence/final-smoke.json). These older files describe their earlier script revision, not the current six-tool program.
 
 The [first version](https://github.com/acgh213/ask-pstv/tree/338e194a784fd22e156a6862b4b5087a6cb3fcc7) was deliberately local-only at depth 2. The later weather exception and depth-8 experiment were explicitly requested; the earlier failure records remain intact.
 
@@ -165,8 +221,8 @@ The [first version](https://github.com/acgh213/ask-pstv/tree/338e194a784fd22e156
 
 ## Agreed next toys
 
-1. Pokédex: implemented and hardware-tested in this revision.
-2. Dice goblin: next; validated numeric arguments and real local random rolls, not model-invented results.
-3. Tiny text adventure: after dice; deterministic rooms/rules, model only proposes a bounded action.
+1. Pokédex: implemented and hardware-tested.
+2. Dice goblin: implemented and hardware-tested; spelled-out numbers only.
+3. Tiny text adventure: next; deterministic rooms and rules, the model only proposes a bounded action.
 
-The latter two are not implemented yet. This revision closes only the Pokédex step.
+The adventure is not implemented yet.

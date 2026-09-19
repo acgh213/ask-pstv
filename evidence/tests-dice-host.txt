@@ -1,0 +1,27 @@
+test_accepts_only_three_known_zero_argument_tools (test_demo.SafetyTests.test_accepts_only_three_known_zero_argument_tools) ... ok
+test_cheshire_aliases_are_explicit_not_guessed (test_demo.SafetyTests.test_cheshire_aliases_are_explicit_not_guessed) ... ok
+test_dice_arguments_are_strict (test_demo.SafetyTests.test_dice_arguments_are_strict) ... ok
+test_dice_cannot_roll_numbers_not_in_the_prompt (test_demo.SafetyTests.test_dice_cannot_roll_numbers_not_in_the_prompt) ... ok
+test_dice_notation_must_match_the_roll (test_demo.SafetyTests.test_dice_notation_must_match_the_roll) ... ok
+test_dice_numbers_must_be_mentioned_in_the_prompt (test_demo.SafetyTests.test_dice_numbers_must_be_mentioned_in_the_prompt) ... ok
+test_dice_rolls_are_real_random_and_bounded (test_demo.SafetyTests.test_dice_rolls_are_real_random_and_bounded) ... ok
+test_empty_calls_refused (test_demo.SafetyTests.test_empty_calls_refused) ... ok
+test_foreground_runtime_session_is_cleaned_up (test_demo.SafetyTests.test_foreground_runtime_session_is_cleaned_up) ... ok
+test_input_boundaries_do_not_run_model (test_demo.SafetyTests.test_input_boundaries_do_not_run_model) ... ok
+test_local_tools_return_fixed_readable_fields (test_demo.SafetyTests.test_local_tools_return_fixed_readable_fields) ... ok
+test_misread_dice_notation_is_refused_not_rolled (test_demo.SafetyTests.test_misread_dice_notation_is_refused_not_rolled) ... ok
+test_no_tool_executes_until_decision_validates (test_demo.SafetyTests.test_no_tool_executes_until_decision_validates) ... ok
+test_one_model_call_one_readonly_tool (test_demo.SafetyTests.test_one_model_call_one_readonly_tool) ... ok
+test_pokemon_cannot_send_a_name_not_in_prompt (test_demo.SafetyTests.test_pokemon_cannot_send_a_name_not_in_prompt) ... ok
+test_pokemon_lookup_caches_and_formats_api_data (test_demo.SafetyTests.test_pokemon_lookup_caches_and_formats_api_data) ... ok
+test_pokemon_name_arguments_and_aliases (test_demo.SafetyTests.test_pokemon_name_arguments_and_aliases) ... ok
+test_rejects_malformed_error_and_suppressed_responses (test_demo.SafetyTests.test_rejects_malformed_error_and_suppressed_responses) ... ok
+test_rejects_unknown_names_arguments_and_multiple_calls (test_demo.SafetyTests.test_rejects_unknown_names_arguments_and_multiple_calls) ... ok
+test_weather_cannot_send_a_city_not_in_the_prompt (test_demo.SafetyTests.test_weather_cannot_send_a_city_not_in_the_prompt) ... ok
+test_weather_city_arguments_are_strict (test_demo.SafetyTests.test_weather_city_arguments_are_strict) ... ok
+test_weather_uses_fixed_https_origin_and_resolved_location (test_demo.SafetyTests.test_weather_uses_fixed_https_origin_and_resolved_location) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.117s
+
+OK

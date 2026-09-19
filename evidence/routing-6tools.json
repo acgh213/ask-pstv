@@ -1,0 +1,90 @@
+[
+  {
+    "index": 0,
+    "prompt": "how are you doing?",
+    "expected": "get_system_status",
+    "selected": "get_system_status",
+    "exit_code": 0,
+    "wall_s": 49.12266922200797,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 21:03:57\n  memory available: 426.8 MiB\n  load (1/5/15 min): 4.29 / 4.15 / 3.21\n",
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": true
+  },
+  {
+    "index": 1,
+    "prompt": "how long have you been awake?",
+    "expected": "get_system_status",
+    "selected": "get_weather",
+    "exit_code": 0,
+    "wall_s": 55.05234368296806,
+    "stdout": "Needle -> get_weather({\"city\": \"Awake\"})\n\nPSTV:\n  location (wttr.in): Avakpe, Volta, Ghana\n  weather: Overcast \n  temperature: 74 F / 23 C\n",
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": false
+  },
+  {
+    "index": 2,
+    "prompt": "how much memory is available?",
+    "expected": "get_system_status",
+    "selected": "get_system_status",
+    "exit_code": 0,
+    "wall_s": 48.37107431102777,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 21:05:40\n  memory available: 424.3 MiB\n  load (1/5/15 min): 4.25 / 4.16 / 3.32\n",
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": true
+  },
+  {
+    "index": 3,
+    "prompt": "how much room do you have left?",
+    "expected": "get_storage_status",
+    "selected": "get_system_status",
+    "exit_code": 0,
+    "wall_s": 50.53878268203698,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 21:06:31\n  memory available: 428.4 MiB\n  load (1/5/15 min): 4.15 / 4.15 / 3.36\n",
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": false
+  },
+  {
+    "index": 4,
+    "prompt": "show me the disk usage",
+    "expected": "get_storage_status",
+    "selected": "get_system_status",
+    "exit_code": 0,
+    "wall_s": 48.89479080901947,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 21:07:26\n  memory available: 430.3 MiB\n  load (1/5/15 min): 3.97 / 4.08 / 3.38\n",
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": false
+  },
+  {
+    "index": 5,
+    "prompt": "what kernel are you running?",
+    "expected": "get_kernel_info",
+    "selected": "get_kernel_info",
+    "exit_code": 0,
+    "wall_s": 52.113977500994224,
+    "stdout": "Needle -> get_kernel_info({})\n\nPSTV:\n  kernel: Linux 6.12.0-g37b9348710df\n  version: #4 SMP Sun Sep 13 21:17:26 EDT 2026\n  architecture: armv7l\n",
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": true
+  },
+  {
+    "index": 6,
+    "prompt": "what architecture are you?",
+    "expected": "get_kernel_info",
+    "selected": "get_kernel_info",
+    "exit_code": 0,
+    "wall_s": 53.21715939702699,
+    "stdout": "Needle -> get_kernel_info({})\n\nPSTV:\n  kernel: Linux 6.12.0-g37b9348710df\n  version: #4 SMP Sun Sep 13 21:17:26 EDT 2026\n  architecture: armv7l\n",
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": true
+  },
+  {
+    "index": 7,
+    "prompt": "write me a love poem about the moon",
+    "expected": null,
+    "selected": "get_pokemon_info",
+    "exit_code": 1,
+    "wall_s": 56.040958522004075,
+    "stdout": "Needle -> get_pokemon_info({\"name\": \"moon\"})\n\nPSTV:\n  get_pokemon_info failed; no retry or fallback. Check the lookup name, connection, or local cache.\n",
+    "script_sha256": "eec3049a69ce16fbfe308b97feee57e5bed0ffe80db2a3e3c9bbbbbb2c279d0f",
+    "passed": false
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "prompt": "roll three twenty-sided dice",
+    "wall_s": 51.55084622395225,
+    "raw": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"roll_dice\",\"arguments\":{\"count\":3,\"sides\":20}}],\"suppressed_calls\":[],\"reasoning\":\"count 3 from 'three twenty-sided dice'; sides 20 from 'twenty'\",\"confidence\":0.9770,\"prefill_tps\":8.0,\"decode_tps\":3.8,\"peak_ram_mb\":77.2,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n"
+  },
+  {
+    "prompt": "roll 2d6",
+    "wall_s": 49.06544758297969,
+    "raw": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"roll_dice\",\"arguments\":{\"count\":2,\"sides\":2}}],\"suppressed_calls\":[],\"reasoning\":\"count 2 from '2d6'; sides 2 from '2d6'.\",\"confidence\":1.0000,\"prefill_tps\":7.7,\"decode_tps\":3.8,\"peak_ram_mb\":77.2,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n"
+  },
+  {
+    "prompt": "roll some dice",
+    "wall_s": 51.56332662003115,
+    "raw": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[],\"suppressed_calls\":[{\"name\":\"roll_dice\",\"arguments\":{\"count\":3,\"sides\":3}}],\"reasoning\":\"'roll some dice' -> roll_dice count 3; 'somed' -> size 3d20\",\"confidence\":0.7743,\"prefill_tps\":7.7,\"decode_tps\":3.8,\"peak_ram_mb\":77.2,\"validation\":{\"ungrounded\":[\"roll_dice.count\",\"roll_dice.sides\"],\"negation\":false}}\n"
+  },
+  {
+    "prompt": "roll a d20",
+    "wall_s": 49.85894974699477,
+    "raw": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"roll_dice\",\"arguments\":{\"count\":20,\"sides\":2}}],\"suppressed_calls\":[],\"reasoning\":\"count 20 from '20'; sides defaults to 2; roll_dice tool.\",\"confidence\":0.9646,\"prefill_tps\":7.7,\"decode_tps\":3.8,\"peak_ram_mb\":77.2,\"validation\":{\"ungrounded\":[\"roll_dice.sides\"],\"negation\":false}}\n"
+  }
+]

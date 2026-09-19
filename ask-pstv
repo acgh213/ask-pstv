@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""One local model call, one bounded tool: status, weather, or a Pokedex card."""
+"""One local model call, one bounded tool: status, weather, Pokedex card, or a real dice roll."""
 import json
 import os
 import re
 from pathlib import Path
 import resource
+import secrets
 import signal
 import subprocess
 import sys
@@ -21,6 +22,7 @@ EXAMPLES = (
     'what is the weather in 06410?',
     'tell me about Gengar',
     'what types and abilities does Pikachu have?',
+    'roll three twenty-sided dice',
     'what kernel are you running?',
     'what architecture are you?',
     'write me a love poem about the moon',
@@ -59,6 +61,17 @@ def get_kernel_info():
     info = os.uname()
     return [f'kernel: {info.sysname} {info.release}',
             f'version: {info.version}', f'architecture: {info.machine}']
+
+NUMBER_WORDS = dict(enumerate('zero one two three four five six seven eight nine ten eleven '
+                              'twelve thirteen fourteen fifteen sixteen seventeen eighteen '
+                              'nineteen twenty'.split()))
+
+def roll_dice(count, sides):
+    # Real local randomness from the OS. The model never supplies a result.
+    rolls = [secrets.randbelow(sides) + 1 for _ in range(count)]
+    return [f'rolled {count}d{sides}',
+            'rolls: ' + ', '.join(str(roll) for roll in rolls),
+            f'total: {sum(rolls)}']
 
 def weather_location(city):
     if (not isinstance(city, str) or not 1 <= len(city) <= 80 or city != city.strip()
@@ -151,7 +164,8 @@ def get_pokemon_info(name):
     except (KeyError, IndexError, TypeError, ValueError, AttributeError, RecursionError) as exc:
         raise OSError('unusable Pokemon response/cache; no retry') from exc
 
-TOOLS = {'get_pokemon_info': get_pokemon_info, 'get_weather': get_weather, 'get_system_status': get_system_status,
+TOOLS = {'get_pokemon_info': get_pokemon_info, 'get_weather': get_weather, 'roll_dice': roll_dice,
+         'get_system_status': get_system_status,
          'get_storage_status': get_storage_status,
          'get_kernel_info': get_kernel_info}
 DESCRIPTIONS = {
@@ -160,8 +174,45 @@ DESCRIPTIONS = {
     'get_storage_status': 'Get disk usage and free storage space. Check how much room is left.',
     'get_kernel_info': 'Get the Linux kernel version and processor architecture.',
     'get_pokemon_info': 'Look up a named Pokemon in the Pokedex: types, abilities and base stats.',
+    'roll_dice': 'Roll dice and return real random results, such as 3d20 or two six-sided dice.',
 }
-ARG_FIELDS = {'get_weather': 'city', 'get_pokemon_info': 'name'}
+ARG_FIELDS = {
+    'get_weather': {'city': {'type': 'string', 'minLength': 1, 'maxLength': 80}},
+    'get_pokemon_info': {'name': {'type': 'string', 'minLength': 1, 'maxLength': 60}},
+    'roll_dice': {'count': {'type': 'integer', 'minimum': 1, 'maximum': 20},
+                  'sides': {'type': 'integer', 'minimum': 2, 'maximum': 100}},
+}
+
+def validate_argument(name, field, value):
+    spec = ARG_FIELDS[name][field]
+    if spec['type'] == 'integer':
+        if type(value) is not int or not spec['minimum'] <= value <= spec['maximum']:
+            raise ValueError('integer argument out of range')
+    elif field == 'city':
+        weather_location(value)
+    else:
+        pokemon_slug(value)
+
+def mentioned_arguments(name, arguments, prompt):
+    """Every argument must be stated in the request: literally, or as a number."""
+    folded, words = prompt.casefold(), re.findall(r'[a-z]+', prompt.casefold())
+    for value in arguments.values():
+        if isinstance(value, str):
+            if value.casefold() not in folded:
+                return False
+        elif str(value) not in prompt and NUMBER_WORDS.get(value) not in words:
+            return False
+    return True
+
+DICE_NOTATION = re.compile(r'(\d*)[dD](\d+)')
+
+def notation_agrees(name, arguments, prompt):
+    """Dice notation the user typed must match the roll chosen; bare '6d' means one die."""
+    if name != 'roll_dice':
+        return True
+    found = DICE_NOTATION.findall(prompt)
+    return not found or all((int(count or 1), int(sides)) == (arguments['count'], arguments['sides'])
+                            for count, sides in found)
 
 def unique_object(pairs):
     result = {}
@@ -197,11 +248,12 @@ def select_tool(raw):
             or not isinstance(call['name'], str) or call['name'] not in TOOLS
             or not isinstance(call['arguments'], dict)):
         raise ValueError('tool or arguments not allowlisted')
-    field = ARG_FIELDS.get(call['name'])
-    if field:
-        if set(call['arguments']) != {field}:
+    fields = ARG_FIELDS.get(call['name'])
+    if fields:
+        if set(call['arguments']) != set(fields):
             raise ValueError('unexpected arguments')
-        (weather_location if field == 'city' else pokemon_slug)(call['arguments'][field])
+        for field, value in call['arguments'].items():
+            validate_argument(call['name'], field, value)
     elif call['arguments'] != {}:
         raise ValueError('local tools take no arguments')
     return call['name'], call['arguments']
@@ -216,12 +268,17 @@ def infer(prompt):
         raise OSError('Place this demo inside the existing Needle feasibility directory.')
     schemas = []
     for name, description in DESCRIPTIONS.items():
-        parameters = {'type': 'object', 'properties': {}, 'required': [],
-                      'additionalProperties': False}
-        field = ARG_FIELDS.get(name)
-        if field:
-            parameters.update(properties={field: {'type': 'string', 'minLength': 1,
-                'maxLength': 80 if field == 'city' else 60, 'description': 'Name as written in the request.'}}, required=[field])
+        fields = ARG_FIELDS.get(name, {})
+        properties = {}
+        for field, spec in fields.items():
+            item = {'type': spec['type'], 'description': 'Value as written in the request.'}
+            if spec['type'] == 'string':
+                item.update(minLength=spec['minLength'], maxLength=spec['maxLength'])
+            else:
+                item.update(minimum=spec['minimum'], maximum=spec['maximum'])
+            properties[field] = item
+        parameters = {'type': 'object', 'properties': properties,
+                      'required': list(fields), 'additionalProperties': False}
         schemas.append({'type': 'function', 'function': {'name': name,
                         'description': description, 'parameters': parameters}})
     with tempfile.TemporaryDirectory(prefix='.ask-pstv-', dir=HERE) as work:
@@ -260,9 +317,9 @@ def main(args):
         return 2
     try:
         decision = select_tool(infer(args[0]))
-        field = ARG_FIELDS.get(decision[0]) if decision else None
-        if field and decision[1][field].casefold() not in args[0].casefold():
-            raise ValueError('lookup argument was not present in the request')
+        if decision and not (mentioned_arguments(decision[0], decision[1], args[0])
+                             and notation_agrees(decision[0], decision[1], args[0])):
+            raise ValueError('argument was not present in the request')
     except ValueError:
         decision = None
     except subprocess.TimeoutExpired:
@@ -272,7 +329,8 @@ def main(args):
         print(f'PSTV: {exc}')
         return 1
     if decision is None:
-        print('Needle -> no allowed tool\n\nPSTV: I can report local status, weather, or named Pokemon.')
+        print('Needle -> no allowed tool\n\nPSTV: I can report local status, weather, '
+              'named Pokemon, or roll dice.')
         return 2
     name, arguments = decision
     print(f'Needle -> {name}({json.dumps(arguments, ensure_ascii=True)})\n\nPSTV:')
