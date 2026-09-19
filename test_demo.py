@@ -26,7 +26,60 @@ class SafetyTests(unittest.TestCase):
 
     def test_accepts_only_three_known_zero_argument_tools(self):
         for name in ('get_system_status', 'get_storage_status', 'get_kernel_info'):
-            self.assertEqual(self.mod['select_tool'](json.dumps(response([call(name)]))), name)
+            self.assertEqual(self.mod['select_tool'](json.dumps(response([call(name)]))), (name, {}))
+
+    def test_weather_city_arguments_are_strict(self):
+        for city in ['Paris', 'São Paulo', 'Cheshire, Connecticut, USA', '06410']:
+            raw = json.dumps(response([call('get_weather', {'city': city})]))
+            self.assertEqual(self.mod['select_tool'](raw), ('get_weather', {'city': city}))
+        for args in [{}, {'city': ''}, {'city': 'https://evil.example'}, {'city': '../x'},
+                     {'city': 'Paris?x=1'}, {'city': 'Paris\n'}, {'city': 'x' * 81},
+                     {'city': None}, {'city': 'Paris', 'url': 'https://evil.example'}]:
+            with self.subTest(args=args), self.assertRaises(ValueError):
+                self.mod['select_tool'](json.dumps(response([call('get_weather', args)])))
+
+    def test_cheshire_aliases_are_explicit_not_guessed(self):
+        for city in ['Cheshire', '06410']:
+            self.assertEqual(self.mod['weather_location'](city), 'Cheshire, Connecticut, USA')
+        self.assertEqual(self.mod['weather_location']('Paris'), 'Paris')
+
+    def test_weather_uses_fixed_https_origin_and_resolved_location(self):
+        from unittest.mock import MagicMock
+        payload = {'nearest_area': [{'areaName': [{'value': 'Cheshire'}],
+                    'region': [{'value': 'Connecticut'}],
+                    'country': [{'value': 'United States of America'}]}],
+                   'current_condition': [{'temp_F': '66', 'temp_C': '19',
+                    'weatherDesc': [{'value': 'Sunny'}]}]}
+        handle = MagicMock()
+        handle.__enter__.return_value = handle
+        handle.read.return_value = json.dumps(payload).encode()
+        opener = MagicMock()
+        opener.open.return_value = handle
+        with patch('urllib.request.build_opener', return_value=opener):
+            lines = self.mod['get_weather']('06410')
+            request = opener.open.call_args.args[0]
+            self.assertEqual(request.full_url,
+                'https://wttr.in/Cheshire%2C%20Connecticut%2C%20USA?format=j1&lang=en')
+            self.assertEqual(opener.open.call_args.kwargs['timeout'], 15)
+            self.assertIn('Cheshire, Connecticut, United States of America', lines[0])
+            payload['nearest_area'][0]['country'][0]['value'] = 'France'
+            handle.read.return_value = json.dumps(payload).encode()
+            with self.assertRaises(OSError):
+                self.mod['get_weather']('06410')
+            handle.read.return_value = b'x' * 262145
+            with self.assertRaises(OSError):
+                self.mod['get_weather']('Paris')
+        self.assertIsNone(self.mod['NoRedirect']().redirect_request(None, None, 302,
+                          'redirect', {}, 'https://evil.example'))
+
+    def test_weather_cannot_send_a_city_not_in_the_prompt(self):
+        def forbidden(**_):
+            self.fail('invented location must not reach network')
+        globals_ = self.mod['main'].__globals__
+        raw = json.dumps(response([call('get_weather', {'city': 'Paris'})]))
+        with patch.dict(globals_, infer=lambda _: raw, TOOLS={'get_weather': forbidden}):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(self.mod['main'](['write a poem']), 2)
 
     def test_empty_calls_refused(self):
         self.assertIsNone(self.mod['select_tool'](json.dumps(response([]))))

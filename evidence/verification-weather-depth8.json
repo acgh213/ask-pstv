@@ -1,0 +1,180 @@
+[
+  {
+    "index": 0,
+    "mode": "weather",
+    "depth": 8,
+    "schemas": [
+      "get_weather",
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "what is the weather in Cheshire?",
+    "expected": "get_weather",
+    "exit_code": 0,
+    "wall_s": 31.40997422399232,
+    "stdout": "Needle -> get_weather({\"city\": \"Cheshire\"})\n\nPSTV:\n  location (wttr.in): Cheshire, Connecticut, United States of America\n  weather: Overcast \n  temperature: 66 F / 19 C\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_weather",
+            "arguments": {
+              "city": "Cheshire"
+            }
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'weather in Cheshire' -> city 'Cheshire'. get_weather tool.",
+        "confidence": 1.0,
+        "prefill_tps": 10.8,
+        "decode_tps": 4.4,
+        "peak_ram_mb": 77.3,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": true
+  },
+  {
+    "index": 1,
+    "mode": "weather",
+    "depth": 8,
+    "schemas": [
+      "get_weather",
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "what is the weather in 06410?",
+    "expected": "get_weather",
+    "exit_code": 2,
+    "wall_s": 28.525531678984407,
+    "stdout": "Needle -> no allowed tool\n\nPSTV: I can report local status or weather for a named city.\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [],
+        "suppressed_calls": [
+          {
+            "name": "get_weather",
+            "arguments": {
+              "city": "06410"
+            }
+          }
+        ],
+        "reasoning": "'06410' -> city '06410'. get_weather tool.",
+        "confidence": 1.0,
+        "prefill_tps": 11.0,
+        "decode_tps": 4.4,
+        "peak_ram_mb": 77.1,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": false
+  },
+  {
+    "index": 2,
+    "mode": "weather",
+    "depth": 8,
+    "schemas": [
+      "get_weather",
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "write me a love poem about the moon",
+    "expected": null,
+    "exit_code": 0,
+    "wall_s": 28.74441006995039,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 20:16:30\n  memory available: 430.5 MiB\n  load (1/5/15 min): 3.37 / 1.37 / 0.52\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_system_status",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'write me a love poem about the moon' -> get_system_status to see what's available.",
+        "confidence": 1.0,
+        "prefill_tps": 10.6,
+        "decode_tps": 4.4,
+        "peak_ram_mb": 77.3,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": false
+  },
+  {
+    "index": 3,
+    "mode": "weather",
+    "depth": 8,
+    "schemas": [
+      "get_weather",
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "what is the weather in Paris?",
+    "expected": "get_weather",
+    "exit_code": 0,
+    "wall_s": 29.055177172005642,
+    "stdout": "Needle -> get_weather({\"city\": \"Paris\"})\n\nPSTV:\n  location (wttr.in): Saint-Merri, Ile-de-France, France\n  weather: Clear \n  temperature: 66 F / 19 C\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'weather in Paris' -> city 'Paris'. get_weather tool.",
+        "confidence": 1.0,
+        "prefill_tps": 10.6,
+        "decode_tps": 4.4,
+        "peak_ram_mb": 77.2,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": true
+  }
+]

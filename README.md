@@ -1,32 +1,58 @@
 # ask-pstv
 
-A tiny, manual CLI experiment: ask a Linux-running PlayStation TV about itself, using [Cactus Compute Needle 3](https://github.com/cactus-compute/needle) locally.
+Ask a Linux-running PlayStation TV about itself—or ask it for real weather—using [Needle 3](https://github.com/cactus-compute/needle) for local tool selection.
 
-**Status: partial / failed acceptance.** The wrapper runs on real PSTV hardware, but the unchanged two-layer model chose the expected action for only **4 of 8 canned prompts**, both before and after a small schema cleanup. It incorrectly routes storage questions and an irrelevant poetry request to system status. It is **not** a reliably rejecting natural-language interface. The experiment stopped rather than adding keyword routing, changing depth, or training anything.
+**Working weather demo; still an unreliable general router.** Manual invocation only. One local inference call, at most one validated tool call, deterministic output, then exit. No agent, daemon, web server, or tool chain.
 
-## What does work
+## Try the weather
 
-Actual output from the final hardware check, not an illustrative fixture:
+On the PSTV's existing setup:
 
-```text
-$ ./ask-pstv "how are you doing?"
-Needle -> get_system_status({})
-
-PSTV:
-  uptime: 5d 18:22:09
-  memory available: 433.6 MiB
-  load (1/5/15 min): 2.00 / 2.23 / 1.19
+```sh
+cd /root/pstv-needle-feasibility-2026-09-19/ask-pstv-demo
+./ask-pstv "what is the weather in Cheshire?"
+./ask-pstv "what is the weather in Paris?"
+./ask-pstv "what kernel are you running?"
+./ask-pstv --examples
 ```
 
-`"what kernel are you running?"` selected `get_kernel_info({})` and returned Linux `6.12.0-g37b9348710df`, architecture `armv7l`.
+Cheshire result from the hardware test on 2026-09-19 (display whitespace trimmed; raw transcript retained in evidence):
 
-One invocation runs one foreground inference child, validates its JSON, reads at most one local status tool, formats the result, and exits. The model never writes the answer prose. Status is sampled **after** the inference process exits: available memory has largely recovered, but load averages still include the inference work.
+```text
+Needle -> get_weather({"city": "Cheshire"})
 
-## Run it on the existing test setup
+PSTV:
+  location (wttr.in): Cheshire, Connecticut, United States of America
+  weather: Overcast
+  temperature: 66 F / 19 C
+```
 
-No packages to install. Python 3 standard library only, on the existing Debian 12 armhf userspace.
+That lookup took **31.41 seconds** including inference and the weather request. Paris took **29.06 seconds**; wttr resolved it to Saint-Merri, Ile-de-France, France. These observations are historical, not a live forecast embedded in the README.
 
-Put this directory directly inside the feasibility directory, alongside the existing official runtime/model:
+### Cheshire is not France
+
+The demo explicitly maps `Cheshire` and `06410` to `Cheshire, Connecticut, USA` **after model selection**, because the bare location/ZIP can be misresolved by the weather service. This is a documented location alias, not a keyword rule choosing a tool. The wrapper checks that this lookup actually resolves to Cheshire, Connecticut, United States of America; otherwise it refuses the weather result. Other locations are shown with the town, region and country wttr returned, so ambiguity is visible.
+
+**Use “Cheshire,” not “06410,” in the demonstrated prompt.** The alias for `06410` is implemented and unit-tested, but on hardware Needle extracted the ZIP into a *suppressed* call. The wrapper correctly made no HTTP request for that turn. We do not override the engine's suppression.
+
+## Current scope
+
+The owner explicitly expanded the original local-only experiment to allow one weather service and an eight-layer trial. Current default flags are **`--depth 8 --threads 4 --max 128 --fail-input-overflow`**. The executable and weight file are the same official files as before, not retrained, exported, compiled, patched, or replaced.
+
+The script offers only these four tools:
+
+- `get_weather({"city": "..."})`: one HTTPS GET to a fixed `https://wttr.in/` origin. Returns resolved location, condition, and Fahrenheit/Celsius temperatures.
+- `get_system_status({})`: `/proc/uptime`, `/proc/meminfo`, `/proc/loadavg`.
+- `get_storage_status({})`: `statvfs` for `/` and `/mnt/vita-card` when mounted. Missing/unmounted card directories are labelled explicitly.
+- `get_kernel_info({})`: `os.uname()` kernel release, build version, architecture.
+
+There is no temperature tool; the earlier check found no standard thermal-zone temperature files. No packages or system configuration changes were needed.
+
+Inference remains local. **Weather retrieval is not offline.** wttr.in receives the validated city/location field and the client's public IP, as any direct HTTPS service would. The full prompt is not separately sent. Local status tools use no network. The model does not compose a second prose answer, and the weather response never goes back into the model.
+
+## Install beside the existing runtime
+
+Python 3 standard library only. The hardware run used Debian 12 armhf, Linux `6.12.0-g37b9348710df`, four Cortex-A9 cores, and about 481 MiB RAM visible to Linux.
 
 ```text
 pstv-needle-feasibility-2026-09-19/
@@ -37,78 +63,63 @@ pstv-needle-feasibility-2026-09-19/
     └── test_demo.py
 ```
 
-Then:
+Copy the executable `ask-pstv` into this layout; `test_demo.py` is optional. No installer, background process, service, API, socket listener, autostart, Home Assistant, or voice interface. `--examples` only prints eight prompts; it does not run a suite. The whole application, including schemas and tools, is in one script.
 
-```sh
-cd /root/pstv-needle-feasibility-2026-09-19/ask-pstv-demo
-./ask-pstv "how are you doing?"
-./ask-pstv "what kernel are you running?"
-./ask-pstv --examples
-```
+This repository does not redistribute the engine or weights. The pinned [official model repository](https://huggingface.co/Cactus-Compute/needle3/tree/b274efcb211a9eef48c9a88da4b43bd569696a39) contains `linux-armv7/needle` and `needle3.cact`; artifact sizes and hashes are in [runtime.json](evidence/runtime.json). Execution depth does not shrink the full weight file on disk.
 
-`--examples` only prints the eight prompts; it does not run them. To deploy the repository's code into an existing test directory, copy `ask-pstv` (preserving its executable bit). `test_demo.py` is optional. The one executable script contains the entire demo, schemas included.
+## Validation and boundaries
 
-Exit codes: `0` = an allowed read-only tool ran (not proof that it was the correct tool); `2` = invalid input or no acceptable single tool decision; `1` = runtime/read failure or timeout; `130` = interrupted.
+- Exact tool-name allowlist, one call maximum. Local tools require `{}`; weather requires exactly `{"city": string}`.
+- A city must be 1–80 characters, contain only letters/numbers and a small set of location punctuation, and appear literally (case-insensitive) in the prompt. Slashes, query delimiters, control characters, arbitrary URLs, extra arguments, and traversal-like `..` are rejected.
+- City text is URL-encoded into one fixed HTTPS path. No redirects, environment proxies, alternate hosts, IP-geolocation fallback, credentials, or retries. HTTPS certificate verification uses the normal system CA trust. The GET has a **15-second socket timeout**, not a claimed whole-transaction deadline, and a **256 KiB response cap**.
+- The response must contain usable location/condition/temperature fields; displayed fields are size-bounded and printable, preventing terminal-control injection. The returned `weatherUrl` is ignored. A weather failure does not trigger another tool.
+- No shell receives model output. No `eval`, arbitrary command/path selection, dynamic code loading, recursive calls, or follow-up model turn.
+- Duplicate JSON keys, malformed/error responses, multiple calls, unknown names, invalid arguments, non-finite/out-of-range confidence, and suppressed calls cannot dispatch. An empty call list always means refusal, regardless of unused metadata; it is not treated as an independent engine attestation.
+- Native inference receives a fixed argv and minimal environment. `NEEDLE_TELEMETRY=0`, `DO_NOT_TRACK=1`, and `HF_HUB_OFFLINE=1` disable configured telemetry/download behavior. No model downloader or cloud-inference fallback exists in the wrapper.
+- Inference has a 180-second timeout, 384 MiB process-local address-space limit, and core dumps disabled. Its process group is cleaned up and the direct child is waited for. Temporary files stay inside the demo directory and are removed on normal exit/cancellation. SIGKILL and power loss cannot run Python cleanup.
 
-## Exactly three tools
+This is a **dispatch boundary, not an OS sandbox** for the trusted prebuilt engine. No packet audit was performed. A valid allowed call can still be the **wrong semantic choice**. The `PSTV` heading is the demo label, not device attestation; it reports the host where it runs, so run it on the console. Root privileges are not inherently needed if the user can read the runtime/model and write the demo directory.
 
-- `get_system_status({})`: reads `/proc/uptime`, `/proc/meminfo`, `/proc/loadavg`.
-- `get_storage_status({})`: reads `statvfs` for `/` and `/mnt/vita-card` when mounted. Reports missing/unmounted card paths explicitly rather than pretending an ordinary directory is a separate filesystem.
-- `get_kernel_info({})`: reads `os.uname()` for kernel release, build version, architecture.
+Exit codes: `0` = an allowed tool completed, not proof of correct intent; `2` = invalid input/no acceptable decision; `1` = inference/tool failure or timeout; `130` = interruption.
 
-No temperature tool: the target exposed no `/sys/class/thermal/thermal_zone*/temp` files during this test. No packages, drivers, or hardware probing were added to obtain one.
+## What eight layers changed—and did not
 
-## Safety boundary, and what it does not prove
+The original three-tool questions were rerun **without the weather schema**, at depth 8. This kept the tested schema set and prompts comparable with the previous depth-2 run. Both got the same **4/8** decisions right:
 
-- Tools take **zero arguments**, access fixed local paths, and never execute a shell or use networking.
-- A returned name must exactly match the dispatch dictionary. Arguments must be the empty JSON object; extra call fields, unknown names, multiple calls, duplicate JSON keys, malformed/error responses, non-finite/invalid confidence, and suppressed calls fail closed.
-- No `eval`, dynamic imports from output, command interpolation, path selection by the model, recursion, retries, or second model call.
-- Native executable gets a fixed argv, `--depth 2 --threads 4 --max 128 --fail-input-overflow`. No `--forced`, regex triggers, or keyword-based routing.
-- Telemetry is explicitly disabled with `NEEDLE_TELEMETRY=0` and `DO_NOT_TRACK=1`; offline mode is set. No cloud fallback or downloader exists in the wrapper. Its child receives a minimal environment rather than inherited credentials.
-- Temporary schema/cache/home files live in a private temporary directory inside the demo directory and are removed on ordinary exit. The existing model/runtime are read, not modified.
-- A 180-second inference timeout, disabled core dumps, and a 384 MiB child address-space limit are process-local. Timeout/cancellation kills and reaps the foreground child. SIGKILL or power loss cannot perform Python cleanup and may leave temporary files.
-- No daemon, server, socket listener, autostart, Home Assistant, or voice integration. No system configuration changes.
+1. “how are you doing?” → system status, pass.
+2. “how long have you been awake?” → system status, pass.
+3. “how much memory is available?” → system status, pass.
+4. “how much room do you have left?” → system status instead of storage, fail.
+5. “show me the disk usage” → system status instead of storage, fail.
+6. “what kernel are you running?” → kernel info, pass.
+7. “what architecture are you?” → system status instead of kernel info, fail.
+8. “write me a love poem about the moon” → system status instead of refusal, fail.
 
-An empty `function_calls` list always means refusal: unused metadata cannot cause dispatch, and is not treated as an independently valid engine attestation. The `PSTV` heading is the demo's label, not a hardware identity check; these functions report the machine on which the script runs. Run it on the console, not on your SSH client.
+The depth-8 status check took about **19.5–22.3 seconds per call** measured on-device. Runtime-reported decode was **4.7–4.8 tokens/s**, with reported peak RAM **77.0–77.3 MB**. No accuracy improvement was observed. We verified the requested `--depth 8` invocation, not internal per-layer execution through instrumentation.
 
-This is a **dispatch boundary, not an OS sandbox** for the native executable. The prebuilt engine is a trusted dependency; its network activity was not packet-audited. The model can still select the **wrong allowed read-only tool**, including for an irrelevant request. Strict JSON validation does not detect that semantic mistake. Running as root is unnecessary if the user can read the weights and write the demo directory; do not elevate merely to run this script.
+With all four schemas present, the separate weather checks found:
 
-## Eight canned prompts: final real-hardware results
+- Cheshire: correct city extraction and real Connecticut weather, pass.
+- `06410`: engine suppressed its own correctly extracted city value; safe refusal, but failed the desired weather lookup.
+- Love poem: still misrouted to system status, fail.
+- Paris: correct extraction and real France weather, pass.
 
-1. `how are you doing?` → system status, **pass**.
-2. `how long have you been awake?` → system status, **pass**.
-3. `how much memory is available?` → system status, **pass**.
-4. `how much room do you have left?` → system status instead of storage, **fail**.
-5. `show me the disk usage` → system status instead of storage, **fail**.
-6. `what kernel are you running?` → kernel info, **pass**.
-7. `what architecture are you?` → system status instead of kernel info, **fail**.
-8. `write me a love poem about the moon` → system status instead of rejection, **fail**.
-
-Final observed CLI duration was **21.055–23.703 seconds including SSH overhead**. These are not model-load times. All eight processes exited 0, which is exactly why exit status alone was not an acceptance test.
-
-The diagnostic poetry response gave the wrong call confidence **1.0** and this reasoning:
-
-> 'write me a love poem about the moon' -> get_system_status to see what's available.
-
-The wrapper does not implement the implied follow-up step. It reads the selected status once and exits. A confidence-only threshold cannot distinguish this wrong answer from the tested right ones.
+The successful weather calls reported **4.4 decode tokens/s**, **10.6–10.8 prefill tokens/s**, and **77.2–77.3 MB peak RAM**. These are engine-reported figures, not independently token-counted or RSS-sampled in this follow-up. Timings are whole requests, not isolated model-load times. This is a handful of canned examples, not a general accuracy benchmark.
 
 ## Evidence and tests
-
-- [`evidence/examples.json`](evidence/examples.json): final eight prompts, expected decisions, literal CLI output, exit codes, timings, pass flags.
-- [`evidence/examples-initial.json`](evidence/examples-initial.json): initial longer descriptions/system instructions, also 4/8. The final pass shortened descriptions and omitted system instructions per [the official schema guide](https://cactuscompute.com/blog/designing-tools-for-needle).
-- [`evidence/raw-diagnostics.json`](evidence/raw-diagnostics.json): two additional raw model responses explaining the storage/poetry failures. These diagnostic calls did **not** execute status tools.
-- [`evidence/runtime.json`](evidence/runtime.json): artifact identity and measurements from the preceding model feasibility test.
-- [`evidence/final-smoke.json`](evidence/final-smoke.json): after the review fixes, a real kernel query, the still-misrouted poetry query, a direct read-only storage check (not model-routed), and successful SIGTERM cancellation with no runtime process or temporary directory left over.
-- `test_demo.py`: nine stdlib safety tests, including explicitly synthetic malformed-response fixtures and process-cleanup mocks. These are separate from hardware evidence. Review found an oversized-confidence integer could overflow a float conversion; validation now rejects it using a bounded numeric comparison. The child gets its own process group, which is killed on exit/timeout/cancellation before the direct child is reaped.
 
 ```sh
 python3 -B -m unittest -v test_demo
 ```
 
-The earlier feasibility run achieved **4.8 decode tokens/s**, **12.9–13.8 prefill tokens/s**, and **77.2–77.3 MiB peak process RSS**, with simple weather/timer schemas. Those numbers are not measurements of every wrapper invocation. Final diagnostic calls reported **4.7–4.8 decode tokens/s**, **12.1–12.5 prefill tokens/s**, and **77.2 MiB peak RAM**. The runtime file is 986,100 bytes and weights are 35,335,380 bytes; `--depth 2` changes execution depth, not the size of the full weight archive.
+Thirteen stdlib tests passed on the host and PSTV. Network test fixtures are synthetic and explicitly separate from real-weather evidence. They cover fixed URL construction, location validation/aliases, unexpected Cheshire resolution, oversized responses, redirect refusal, fabricated-city rejection, dispatch validation, and child cleanup.
 
-## Where it stops
+- [Weather hardware records](evidence/verification-weather-depth8.json): four checks, raw engine responses, literal results, measured wall time, and script hash.
+- [Eight-layer status comparison](evidence/verification-status-depth8.json): eight original prompts with only the original three schemas.
+- [Current host tests](evidence/tests-weather-host.txt) / [PSTV tests](evidence/tests-weather-pstv.txt).
+- [Original depth-2 examples](evidence/examples.json), [initial schema attempt](evidence/examples-initial.json), [raw failure diagnostics](evidence/raw-diagnostics.json).
+- [Original runtime provenance/measurements](evidence/runtime.json), [earlier post-review cancellation/smoke check](evidence/final-smoke.json). These older files describe their earlier script revision, not the current four-tool program.
 
-No retraining, export, compilation, different model, changed depth, packages, or system changes. No hidden keyword fallback. Improving routing would be a separate decision, not something silently added to make the screenshots look better.
+The [first version](https://github.com/acgh213/ask-pstv/tree/338e194a784fd22e156a6862b4b5087a6cb3fcc7) was deliberately local-only at depth 2. The later weather exception and depth-8 experiment were explicitly requested; the earlier failure records remain intact.
 
-**The PSTV can run Needle. This particular zero-argument, two-layer demo does not yet pass its natural-language routing test.**
+**It can fetch real weather when the model picks the right tool. It still cannot be trusted to route arbitrary requests correctly.**

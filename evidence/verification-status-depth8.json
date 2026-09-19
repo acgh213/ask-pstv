@@ -1,0 +1,338 @@
+[
+  {
+    "index": 0,
+    "mode": "status",
+    "depth": 8,
+    "schemas": [
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "how are you doing?",
+    "expected": "get_system_status",
+    "exit_code": 0,
+    "wall_s": 19.54032172902953,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 20:17:02\n  memory available: 431.2 MiB\n  load (1/5/15 min): 3.17 / 1.50 / 0.59\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_system_status",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'how are you doing' asks for status -> get_system_status.",
+        "confidence": 1.0,
+        "prefill_tps": 12.1,
+        "decode_tps": 4.8,
+        "peak_ram_mb": 77.0,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": true
+  },
+  {
+    "index": 1,
+    "mode": "status",
+    "depth": 8,
+    "schemas": [
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "how long have you been awake?",
+    "expected": "get_system_status",
+    "exit_code": 0,
+    "wall_s": 21.298373627010733,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 20:17:23\n  memory available: 430.6 MiB\n  load (1/5/15 min): 3.50 / 1.68 / 0.67\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_system_status",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'how long have you been awake' -> get_system_status. Zero-argument tool.",
+        "confidence": 1.0,
+        "prefill_tps": 12.1,
+        "decode_tps": 4.7,
+        "peak_ram_mb": 77.2,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": true
+  },
+  {
+    "index": 2,
+    "mode": "status",
+    "depth": 8,
+    "schemas": [
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "how much memory is available?",
+    "expected": "get_system_status",
+    "exit_code": 0,
+    "wall_s": 20.64612912602024,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 20:17:44\n  memory available: 431.3 MiB\n  load (1/5/15 min): 3.50 / 1.82 / 0.75\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_system_status",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'how much memory is available' -> get_system_status. Zero-argument tool.",
+        "confidence": 1.0,
+        "prefill_tps": 12.5,
+        "decode_tps": 4.8,
+        "peak_ram_mb": 77.2,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": true
+  },
+  {
+    "index": 3,
+    "mode": "status",
+    "depth": 8,
+    "schemas": [
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "how much room do you have left?",
+    "expected": "get_storage_status",
+    "exit_code": 0,
+    "wall_s": 20.44709861004958,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 20:18:05\n  memory available: 429.6 MiB\n  load (1/5/15 min): 3.87 / 2.01 / 0.83\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_system_status",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'how much room' -> get_system_status. Zero-argument tool.",
+        "confidence": 1.0,
+        "prefill_tps": 12.1,
+        "decode_tps": 4.8,
+        "peak_ram_mb": 77.3,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": false
+  },
+  {
+    "index": 4,
+    "mode": "status",
+    "depth": 8,
+    "schemas": [
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "show me the disk usage",
+    "expected": "get_storage_status",
+    "exit_code": 0,
+    "wall_s": 20.96576556598302,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 20:18:26\n  memory available: 433.3 MiB\n  load (1/5/15 min): 4.35 / 2.24 / 0.93\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_system_status",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'disk usage' -> get_system_status. Zero-argument tool.",
+        "confidence": 1.0,
+        "prefill_tps": 7.3,
+        "decode_tps": 4.7,
+        "peak_ram_mb": 77.2,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": false
+  },
+  {
+    "index": 5,
+    "mode": "status",
+    "depth": 8,
+    "schemas": [
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "what kernel are you running?",
+    "expected": "get_kernel_info",
+    "exit_code": 0,
+    "wall_s": 21.229140493960585,
+    "stdout": "Needle -> get_kernel_info({})\n\nPSTV:\n  kernel: Linux 6.12.0-g37b9348710df\n  version: #4 SMP Sun Sep 13 21:17:26 EDT 2026\n  architecture: armv7l\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_kernel_info",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'what kernel are running' -> get_kernel_info. Zero-argument tool.",
+        "confidence": 1.0,
+        "prefill_tps": 11.8,
+        "decode_tps": 4.8,
+        "peak_ram_mb": 77.2,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": true
+  },
+  {
+    "index": 6,
+    "mode": "status",
+    "depth": 8,
+    "schemas": [
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "what architecture are you?",
+    "expected": "get_kernel_info",
+    "exit_code": 0,
+    "wall_s": 20.68136417202186,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 20:19:08\n  memory available: 433.7 MiB\n  load (1/5/15 min): 4.04 / 2.43 / 1.05\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_system_status",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'what architecture are you' -> get_system_status. Zero-argument tool.",
+        "confidence": 1.0,
+        "prefill_tps": 12.5,
+        "decode_tps": 4.8,
+        "peak_ram_mb": 77.3,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": false
+  },
+  {
+    "index": 7,
+    "mode": "status",
+    "depth": 8,
+    "schemas": [
+      "get_system_status",
+      "get_storage_status",
+      "get_kernel_info"
+    ],
+    "prompt": "write me a love poem about the moon",
+    "expected": null,
+    "exit_code": 0,
+    "wall_s": 22.26769805600634,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 20:19:30\n  memory available: 432.5 MiB\n  load (1/5/15 min): 4.02 / 2.54 / 1.13\n",
+    "raw_responses": [
+      {
+        "type": "call",
+        "success": true,
+        "error": null,
+        "error_code": null,
+        "reason": null,
+        "function_calls": [
+          {
+            "name": "get_system_status",
+            "arguments": {}
+          }
+        ],
+        "suppressed_calls": [],
+        "reasoning": "'write me a love poem about the moon' -> get_system_status to see what's available.",
+        "confidence": 1.0,
+        "prefill_tps": 12.1,
+        "decode_tps": 4.7,
+        "peak_ram_mb": 77.3,
+        "validation": {
+          "ungrounded": [],
+          "negation": false
+        }
+      }
+    ],
+    "script_sha256": "b6941da2d037d49d3122a068253fe82a5e193afe53cb49858eafa4248ff52db9",
+    "passed": false
+  }
+]

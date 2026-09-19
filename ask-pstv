@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ask a PSTV about itself: one local model call, at most one read-only tool."""
+"""One local model call, one bounded tool: local status or HTTPS weather."""
 import json
 import os
 from pathlib import Path
@@ -8,13 +8,16 @@ import signal
 import subprocess
 import sys
 import tempfile
+import urllib.parse
+import urllib.request
 
 HERE = Path(__file__).resolve().parent
 RUNTIME = HERE.parent  # Existing feasibility directory; never download anything.
+DEPTH = 8
 EXAMPLES = (
     'how are you doing?',
-    'how long have you been awake?',
-    'how much memory is available?',
+    'what is the weather in Cheshire?',
+    'what is the weather in 06410?',
     'how much room do you have left?',
     'show me the disk usage',
     'what kernel are you running?',
@@ -60,10 +63,54 @@ def get_kernel_info():
             f'version: {info.version}', f'architecture: {info.machine}']
 
 
-TOOLS = {'get_system_status': get_system_status,
+def weather_location(city):
+    if (not isinstance(city, str) or not 1 <= len(city) <= 80 or city != city.strip()
+            or not any(c.isalnum() for c in city)
+            or not all(c.isalnum() or c in " ,.'-" for c in city)
+            or '..' in city):
+        raise ValueError('invalid city')
+    return {'cheshire': 'Cheshire, Connecticut, USA',
+            '06410': 'Cheshire, Connecticut, USA'}.get(city.casefold(), city)
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def get_weather(city):
+    location = weather_location(city)
+    url = 'https://wttr.in/' + urllib.parse.quote(location, safe='') + '?format=j1&lang=en'
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+    request = urllib.request.Request(url, headers={'User-Agent': 'ask-pstv/1.0'})
+    with opener.open(request, timeout=15) as reply:
+        raw = reply.read(262145)
+    if len(raw) > 262144:
+        raise OSError('weather response too large')
+    try:
+        data = json.loads(raw)
+        area, now = data['nearest_area'][0], data['current_condition'][0]
+        town = area['areaName'][0]['value']
+        region, country = area['region'][0]['value'], area['country'][0]['value']
+        if (location.casefold() == 'cheshire, connecticut, usa'
+                and (town.casefold() != 'cheshire' or region != 'Connecticut'
+                     or country != 'United States of America')):
+            raise OSError('weather service resolved Cheshire to the wrong location')
+        fields = [town, region, country, now['weatherDesc'][0]['value'],
+                  now['temp_F'], now['temp_C']]
+        if not all(isinstance(v, str) and len(v) <= 120 and v.isprintable() for v in fields):
+            raise ValueError('invalid weather fields')
+        return [f'location (wttr.in): {town}, {region}, {country}',
+                f'weather: {fields[3]}', f'temperature: {fields[4]} F / {fields[5]} C']
+    except (KeyError, IndexError, TypeError, ValueError, AttributeError, RecursionError) as exc:
+        raise OSError('weather service returned unusable data') from exc
+
+
+TOOLS = {'get_weather': get_weather, 'get_system_status': get_system_status,
          'get_storage_status': get_storage_status,
          'get_kernel_info': get_kernel_info}
 DESCRIPTIONS = {
+    'get_weather': 'Get the current weather for a city or postal code.',
     'get_system_status': 'Get uptime, available RAM and CPU load. Check how the computer is doing.',
     'get_storage_status': 'Get disk usage and free storage space. Check how much room is left.',
     'get_kernel_info': 'Get the Linux kernel version and processor architecture.',
@@ -82,7 +129,10 @@ def unique_object(pairs):
 def select_tool(raw):
     if len(raw) > 65536:
         raise ValueError('oversized response')
-    result = json.loads(raw, object_pairs_hook=unique_object)
+    try:
+        result = json.loads(raw, object_pairs_hook=unique_object)
+    except RecursionError as exc:
+        raise ValueError('over-nested response') from exc
     if not isinstance(result, dict) or result.get('success') is not True:
         raise ValueError('failed response')
     if result.get('error') is not None or result.get('error_code') is not None:
@@ -100,9 +150,15 @@ def select_tool(raw):
     call = calls[0]
     if (not isinstance(call, dict) or set(call) != {'name', 'arguments'}
             or not isinstance(call['name'], str) or call['name'] not in TOOLS
-            or not isinstance(call['arguments'], dict) or call['arguments'] != {}):
+            or not isinstance(call['arguments'], dict)):
         raise ValueError('tool or arguments not allowlisted')
-    return call['name']
+    if call['name'] == 'get_weather':
+        if set(call['arguments']) != {'city'}:
+            raise ValueError('weather requires only city')
+        weather_location(call['arguments']['city'])
+    elif call['arguments'] != {}:
+        raise ValueError('local tools take no arguments')
+    return call['name'], call['arguments']
 
 
 def child_limits():
@@ -114,10 +170,16 @@ def infer(prompt):
     binary, weights = RUNTIME / 'needle', RUNTIME / 'needle3.cact'
     if not binary.is_file() or not weights.is_file():
         raise OSError('Place this demo inside the existing Needle feasibility directory.')
-    schemas = [{'type': 'function', 'function': {'name': name, 'description': description,
-                'parameters': {'type': 'object', 'properties': {}, 'required': [],
-                               'additionalProperties': False}}}
-               for name, description in DESCRIPTIONS.items()]
+    schemas = []
+    for name, description in DESCRIPTIONS.items():
+        parameters = {'type': 'object', 'properties': {}, 'required': [],
+                      'additionalProperties': False}
+        if name == 'get_weather':
+            parameters.update(properties={'city': {'type': 'string', 'minLength': 1,
+                'maxLength': 80, 'description': 'City or postal code as written in the request.'}},
+                required=['city'])
+        schemas.append({'type': 'function', 'function': {'name': name,
+                        'description': description, 'parameters': parameters}})
     with tempfile.TemporaryDirectory(prefix='.ask-pstv-', dir=HERE) as work:
         work = Path(work)
         (work / 'tools.json').write_text(json.dumps(schemas))
@@ -125,7 +187,7 @@ def infer(prompt):
         env = {'PATH': '/usr/bin:/bin', 'HOME': str(work), 'TMPDIR': str(work),
                'XDG_CACHE_HOME': str(work), 'LC_ALL': 'C',
                'NEEDLE_TELEMETRY': '0', 'DO_NOT_TRACK': '1', 'HF_HUB_OFFLINE': '1'}
-        command = [str(binary), '--model', str(weights), '--depth', '2', '--threads', '4',
+        command = [str(binary), '--model', str(weights), '--depth', str(DEPTH), '--threads', '4',
                    '--tools', str(work / 'tools.json'),
                    '--max', '128', '--fail-input-overflow', '--prompt', prompt]
         # A fixed argv, never a shell. This child is awaited, never detached.
@@ -154,24 +216,28 @@ def main(args):
         print('Usage: ./ask-pstv "one short request"  (or --examples)')
         return 2
     try:
-        name = select_tool(infer(args[0]))
+        decision = select_tool(infer(args[0]))
+        if (decision and decision[0] == 'get_weather'
+                and decision[1]['city'].casefold() not in args[0].casefold()):
+            raise ValueError('weather city was not present in the request')
     except ValueError:
-        name = None
+        decision = None
     except subprocess.TimeoutExpired:
         print('PSTV: Needle timed out; no tool ran.')
         return 1
     except OSError as exc:
         print(f'PSTV: {exc}')
         return 1
-    if name is None:
-        print('Needle -> no allowed tool\n\nPSTV: I can report system status, storage, or kernel info only.')
+    if decision is None:
+        print('Needle -> no allowed tool\n\nPSTV: I can report local status or weather for a named city.')
         return 2
+    name, arguments = decision
+    print(f'Needle -> {name}({json.dumps(arguments, ensure_ascii=True)})\n\nPSTV:')
     try:
-        lines = TOOLS[name]()  # Exact dictionary lookup; every tool takes zero arguments.
-    except OSError:
-        print(f'PSTV: {name} could not read local status.')
+        lines = TOOLS[name](**arguments)  # Fixed dispatch; arguments validated above.
+    except (OSError, ValueError):
+        print(f'  {name} failed; no retry or fallback. Check connectivity/location if this was weather.')
         return 1
-    print(f'Needle -> {name}({{}})\n\nPSTV:')
     for line in lines:
         print(f'  {line}')
     return 0
