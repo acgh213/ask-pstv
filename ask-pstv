@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+"""Ask a PSTV about itself: one local model call, at most one read-only tool."""
+import json
+import os
+from pathlib import Path
+import resource
+import signal
+import subprocess
+import sys
+import tempfile
+
+HERE = Path(__file__).resolve().parent
+RUNTIME = HERE.parent  # Existing feasibility directory; never download anything.
+EXAMPLES = (
+    'how are you doing?',
+    'how long have you been awake?',
+    'how much memory is available?',
+    'how much room do you have left?',
+    'show me the disk usage',
+    'what kernel are you running?',
+    'what architecture are you?',
+    'write me a love poem about the moon',
+)
+
+
+def get_system_status():
+    seconds = int(float(Path('/proc/uptime').read_text().split()[0]))
+    days, seconds = divmod(seconds, 86400)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    mem = dict(line.split(':', 1) for line in Path('/proc/meminfo').read_text().splitlines())
+    available = int(mem['MemAvailable'].split()[0]) / 1024
+    load = Path('/proc/loadavg').read_text().split()[:3]
+    return [f'uptime: {days}d {hours:02}:{minutes:02}:{seconds:02}',
+            f'memory available: {available:.1f} MiB',
+            f'load (1/5/15 min): {" / ".join(load)}']
+
+
+def get_storage_status():
+    lines = []
+    for path in ('/', '/mnt/vita-card'):
+        if not Path(path).exists():
+            lines.append(f'{path}: not present')
+        elif path != '/' and not os.path.ismount(path):
+            lines.append(f'{path}: directory exists, not a separate mount')
+        else:
+            stat = os.statvfs(path)
+            unit = stat.f_frsize / (1024 ** 3)
+            total = stat.f_blocks * unit
+            used = (stat.f_blocks - stat.f_bfree) * unit
+            available = stat.f_bavail * unit
+            lines.append(f'{path}: {available:.2f} GiB available, '
+                         f'{used:.2f} GiB used / {total:.2f} GiB total')
+    return lines
+
+
+def get_kernel_info():
+    info = os.uname()
+    return [f'kernel: {info.sysname} {info.release}',
+            f'version: {info.version}', f'architecture: {info.machine}']
+
+
+TOOLS = {'get_system_status': get_system_status,
+         'get_storage_status': get_storage_status,
+         'get_kernel_info': get_kernel_info}
+DESCRIPTIONS = {
+    'get_system_status': 'Get uptime, available RAM and CPU load. Check how the computer is doing.',
+    'get_storage_status': 'Get disk usage and free storage space. Check how much room is left.',
+    'get_kernel_info': 'Get the Linux kernel version and processor architecture.',
+}
+
+
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('duplicate JSON key')
+        result[key] = value
+    return result
+
+
+def select_tool(raw):
+    if len(raw) > 65536:
+        raise ValueError('oversized response')
+    result = json.loads(raw, object_pairs_hook=unique_object)
+    if not isinstance(result, dict) or result.get('success') is not True:
+        raise ValueError('failed response')
+    if result.get('error') is not None or result.get('error_code') is not None:
+        raise ValueError('runtime error')
+    calls = result.get('function_calls')
+    if not isinstance(calls, list):
+        raise ValueError('missing calls')
+    if not calls:
+        return None
+    confidence = result.get('confidence')
+    if (result.get('type') != 'call' or len(calls) != 1
+            or type(confidence) not in (float, int)
+            or not 0.1 <= confidence <= 1 or result.get('suppressed_calls') != []):
+        raise ValueError('not one confident unsuppressed call')
+    call = calls[0]
+    if (not isinstance(call, dict) or set(call) != {'name', 'arguments'}
+            or not isinstance(call['name'], str) or call['name'] not in TOOLS
+            or not isinstance(call['arguments'], dict) or call['arguments'] != {}):
+        raise ValueError('tool or arguments not allowlisted')
+    return call['name']
+
+
+def child_limits():
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    resource.setrlimit(resource.RLIMIT_AS, (384 * 1024 ** 2, 384 * 1024 ** 2))
+
+
+def infer(prompt):
+    binary, weights = RUNTIME / 'needle', RUNTIME / 'needle3.cact'
+    if not binary.is_file() or not weights.is_file():
+        raise OSError('Place this demo inside the existing Needle feasibility directory.')
+    schemas = [{'type': 'function', 'function': {'name': name, 'description': description,
+                'parameters': {'type': 'object', 'properties': {}, 'required': [],
+                               'additionalProperties': False}}}
+               for name, description in DESCRIPTIONS.items()]
+    with tempfile.TemporaryDirectory(prefix='.ask-pstv-', dir=HERE) as work:
+        work = Path(work)
+        (work / 'tools.json').write_text(json.dumps(schemas))
+
+        env = {'PATH': '/usr/bin:/bin', 'HOME': str(work), 'TMPDIR': str(work),
+               'XDG_CACHE_HOME': str(work), 'LC_ALL': 'C',
+               'NEEDLE_TELEMETRY': '0', 'DO_NOT_TRACK': '1', 'HF_HUB_OFFLINE': '1'}
+        command = [str(binary), '--model', str(weights), '--depth', '2', '--threads', '4',
+                   '--tools', str(work / 'tools.json'),
+                   '--max', '128', '--fail-input-overflow', '--prompt', prompt]
+        # A fixed argv, never a shell. This child is awaited, never detached.
+        with subprocess.Popen(command, cwd=work, env=env, stdin=subprocess.DEVNULL,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              text=True, preexec_fn=child_limits, start_new_session=True) as process:
+            try:
+                stdout, _ = process.communicate(timeout=180)
+            finally:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
+            if process.returncode:
+                raise OSError(f'Needle exited with status {process.returncode}; no tool ran.')
+        return stdout
+
+
+def main(args):
+    if args == ['--examples']:
+        print('\n'.join(EXAMPLES))
+        return 0
+    if (len(args) != 1 or not args[0].strip() or len(args[0]) > 512
+            or any(ord(c) < 32 or ord(c) == 127 for c in args[0])):
+        print('Usage: ./ask-pstv "one short request"  (or --examples)')
+        return 2
+    try:
+        name = select_tool(infer(args[0]))
+    except ValueError:
+        name = None
+    except subprocess.TimeoutExpired:
+        print('PSTV: Needle timed out; no tool ran.')
+        return 1
+    except OSError as exc:
+        print(f'PSTV: {exc}')
+        return 1
+    if name is None:
+        print('Needle -> no allowed tool\n\nPSTV: I can report system status, storage, or kernel info only.')
+        return 2
+    try:
+        lines = TOOLS[name]()  # Exact dictionary lookup; every tool takes zero arguments.
+    except OSError:
+        print(f'PSTV: {name} could not read local status.')
+        return 1
+    print(f'Needle -> {name}({{}})\n\nPSTV:')
+    for line in lines:
+        print(f'  {line}')
+    return 0
+
+
+if __name__ == '__main__':
+    # Convert terminal close/termination to normal unwinding so the child is reaped.
+    def interrupted(_signum, _frame):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, interrupted)
+    signal.signal(signal.SIGHUP, interrupted)
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except KeyboardInterrupt:
+        print('\nPSTV: cancelled; inference stopped.')
+        sys.exit(130)

@@ -1,0 +1,74 @@
+[
+  {
+    "prompt": "how are you doing?",
+    "expected": "get_system_status",
+    "exit_code": 0,
+    "wall_including_ssh_s": 30.0,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 18:17:01\n  memory available: 434.8 MiB\n  load (1/5/15 min): 2.09 / 0.81 / 0.38\n",
+    "stderr": "",
+    "passed": true
+  },
+  {
+    "prompt": "how long have you been awake?",
+    "expected": "get_system_status",
+    "exit_code": 0,
+    "wall_including_ssh_s": 31.822,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 18:17:32\n  memory available: 432.7 MiB\n  load (1/5/15 min): 3.22 / 1.21 / 0.52\n",
+    "stderr": "",
+    "passed": true
+  },
+  {
+    "prompt": "how much memory is available?",
+    "expected": "get_system_status",
+    "exit_code": 0,
+    "wall_including_ssh_s": 31.12,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 18:18:04\n  memory available: 434.0 MiB\n  load (1/5/15 min): 3.67 / 1.51 / 0.65\n",
+    "stderr": "",
+    "passed": true
+  },
+  {
+    "prompt": "how much room do you have left?",
+    "expected": "get_storage_status",
+    "exit_code": 0,
+    "wall_including_ssh_s": 32.694,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 18:18:36\n  memory available: 433.3 MiB\n  load (1/5/15 min): 4.03 / 1.83 / 0.79\n",
+    "stderr": "",
+    "passed": false
+  },
+  {
+    "prompt": "show me the disk usage",
+    "expected": "get_storage_status",
+    "exit_code": 0,
+    "wall_including_ssh_s": 30.725,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 18:19:07\n  memory available: 428.6 MiB\n  load (1/5/15 min): 4.16 / 2.08 / 0.90\n",
+    "stderr": "",
+    "passed": false
+  },
+  {
+    "prompt": "what kernel are you running?",
+    "expected": "get_kernel_info",
+    "exit_code": 0,
+    "wall_including_ssh_s": 31.948,
+    "stdout": "Needle -> get_kernel_info({})\n\nPSTV:\n  kernel: Linux 6.12.0-g37b9348710df\n  version: #4 SMP Sun Sep 13 21:17:26 EDT 2026\n  architecture: armv7l\n",
+    "stderr": "",
+    "passed": true
+  },
+  {
+    "prompt": "what architecture are you?",
+    "expected": "get_kernel_info",
+    "exit_code": 0,
+    "wall_including_ssh_s": 31.171,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 18:20:10\n  memory available: 432.9 MiB\n  load (1/5/15 min): 4.14 / 2.47 / 1.12\n",
+    "stderr": "",
+    "passed": false
+  },
+  {
+    "prompt": "write me a love poem about the moon",
+    "expected": null,
+    "exit_code": 0,
+    "wall_including_ssh_s": 31.224,
+    "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 18:20:41\n  memory available: 431.8 MiB\n  load (1/5/15 min): 4.34 / 2.68 / 1.23\n",
+    "stderr": "",
+    "passed": false
+  }
+]

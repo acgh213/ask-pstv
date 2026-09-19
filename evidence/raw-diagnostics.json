@@ -1,0 +1,10 @@
+[
+  {
+    "prompt": "show me the disk usage",
+    "raw_response": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_system_status\",\"arguments\":{}}],\"suppressed_calls\":[],\"reasoning\":\"'disk usage' -> get_system_status. Zero-argument tool.\",\"confidence\":1.0000,\"prefill_tps\":12.5,\"decode_tps\":4.8,\"peak_ram_mb\":77.2,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n"
+  },
+  {
+    "prompt": "write me a love poem about the moon",
+    "raw_response": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_system_status\",\"arguments\":{}}],\"suppressed_calls\":[],\"reasoning\":\"'write me a love poem about the moon' -> get_system_status to see what's available.\",\"confidence\":1.0000,\"prefill_tps\":12.1,\"decode_tps\":4.7,\"peak_ram_mb\":77.2,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n"
+  }
+]

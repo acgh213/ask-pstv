@@ -1,0 +1,93 @@
+{
+  "date": "2026-09-19",
+  "target": "PlayStation TV, Debian 12 armhf, ARMv7 Cortex-A9, four cores",
+  "kernel": "6.12.0-g37b9348710df",
+  "glibc": "2.36",
+  "linux_ram_kib": 492188,
+  "hf_revision": "b274efcb211a9eef48c9a88da4b43bd569696a39",
+  "binary": {
+    "path": "linux-armv7/needle",
+    "bytes": 986100,
+    "sha256": "96aacf7617078d5ad956c73e43970fd15ed0e6d8931b9a0367278d4df52896df"
+  },
+  "weights": {
+    "path": "needle3.cact",
+    "bytes": 35335380,
+    "sha256": "c9d915eca282ed42d1a09b143b592adb4cc6744ffe2d294adf5cfc5548170c38"
+  },
+  "mode": {
+    "depth": 2,
+    "threads": 4,
+    "max_tokens": 128
+  },
+  "initial_feasibility": [
+    {
+      "command": [
+        "./needle",
+        "--model",
+        "needle3.cact",
+        "--depth",
+        "2",
+        "--threads",
+        "4",
+        "--tools",
+        "tools.json",
+        "--max",
+        "128",
+        "--prompt",
+        "What is the weather in Paris?"
+      ],
+      "exit_code": 0,
+      "wall_s": 16.79852050996851,
+      "peak_rss_kib": 79144,
+      "cpu_percent_one_core": 352.34573166652604,
+      "stdout": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_weather\",\"arguments\":{\"city\":\"Paris\"}}],\"suppressed_calls\":[],\"reasoning\":\"'Paris' -> city 'Paris'. get_weather tool.\",\"confidence\":1.0000,\"prefill_tps\":12.9,\"decode_tps\":4.8,\"peak_ram_mb\":77.3,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n"
+    },
+    {
+      "command": [
+        "./needle",
+        "--model",
+        "needle3.cact",
+        "--depth",
+        "2",
+        "--threads",
+        "4",
+        "--tools",
+        "tools.json",
+        "--max",
+        "128",
+        "--prompt",
+        "Set a timer for five minutes."
+      ],
+      "exit_code": 0,
+      "wall_s": 14.258653376018628,
+      "peak_rss_kib": 79144,
+      "cpu_percent_one_core": 351.6426669318488,
+      "stdout": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"set_timer\",\"arguments\":{\"minutes\":5}}],\"suppressed_calls\":[],\"reasoning\":\"'five minutes' -> minutes 5.\",\"confidence\":1.0000,\"prefill_tps\":12.9,\"decode_tps\":4.8,\"peak_ram_mb\":77.3,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n"
+    },
+    {
+      "command": [
+        "./needle",
+        "--model",
+        "needle3.cact",
+        "--depth",
+        "2",
+        "--threads",
+        "4",
+        "--tools",
+        "tools.json",
+        "--max",
+        "128",
+        "--prompt",
+        "What is the weather in Tokyo?"
+      ],
+      "exit_code": 0,
+      "wall_s": 17.85405158798676,
+      "peak_rss_kib": 79016,
+      "cpu_percent_one_core": 359.05947557099404,
+      "stdout": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_weather\",\"arguments\":{\"city\":\"Tokyo\"}}],\"suppressed_calls\":[],\"reasoning\":\"get_weather tool. 'Tokyo' -> city 'Tokyo'.\",\"confidence\":1.0000,\"prefill_tps\":13.8,\"decode_tps\":4.8,\"peak_ram_mb\":77.2,\"validation\":{\"ungrounded\":[],\"negation\":false}}\n"
+    }
+  ],
+  "load_time_s": null,
+  "load_time_note": "Not separately exposed or measured. Wall time is end-to-end, not load time."
+}

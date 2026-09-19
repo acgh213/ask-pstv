@@ -1,0 +1,28 @@
+{
+  "script_sha256": "575cc053246eb6273d168d98221442e5ec50af2ba7bc8d91f7ac1dfcd84f1cc6",
+  "smokes": [
+    {
+      "prompt": "what kernel are you running?",
+      "exit_code": 0,
+      "stdout": "Needle -> get_kernel_info({})\n\nPSTV:\n  kernel: Linux 6.12.0-g37b9348710df\n  version: #4 SMP Sun Sep 13 21:17:26 EDT 2026\n  architecture: armv7l\n",
+      "stderr": ""
+    },
+    {
+      "prompt": "write me a love poem about the moon",
+      "exit_code": 0,
+      "stdout": "Needle -> get_system_status({})\n\nPSTV:\n  uptime: 5d 18:38:07\n  memory available: 430.5 MiB\n  load (1/5/15 min): 2.20 / 0.86 / 0.98\n",
+      "stderr": ""
+    }
+  ],
+  "direct_storage_tool_not_model_routed": [
+    "/: 6.15 GiB available, 1.21 GiB used / 7.78 GiB total",
+    "/mnt/vita-card: 104.52 GiB available, 11.01 GiB used / 115.53 GiB total"
+  ],
+  "cancel": {
+    "exit_code": 130,
+    "stdout": "\nPSTV: cancelled; inference stopped.\n",
+    "stderr": ""
+  },
+  "needle_processes_remaining": "",
+  "temporary_directories_remaining": []
+}

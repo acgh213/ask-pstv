@@ -1,0 +1,14 @@
+test_accepts_only_three_known_zero_argument_tools (test_demo.SafetyTests.test_accepts_only_three_known_zero_argument_tools) ... ok
+test_empty_calls_refused (test_demo.SafetyTests.test_empty_calls_refused) ... ok
+test_foreground_runtime_session_is_cleaned_up (test_demo.SafetyTests.test_foreground_runtime_session_is_cleaned_up) ... ok
+test_input_boundaries_do_not_run_model (test_demo.SafetyTests.test_input_boundaries_do_not_run_model) ... ok
+test_local_tools_return_fixed_readable_fields (test_demo.SafetyTests.test_local_tools_return_fixed_readable_fields) ... ok
+test_no_tool_executes_until_decision_validates (test_demo.SafetyTests.test_no_tool_executes_until_decision_validates) ... ok
+test_one_model_call_one_readonly_tool (test_demo.SafetyTests.test_one_model_call_one_readonly_tool) ... ok
+test_rejects_malformed_error_and_suppressed_responses (test_demo.SafetyTests.test_rejects_malformed_error_and_suppressed_responses) ... ok
+test_rejects_unknown_names_arguments_and_multiple_calls (test_demo.SafetyTests.test_rejects_unknown_names_arguments_and_multiple_calls) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.580s
+
+OK
