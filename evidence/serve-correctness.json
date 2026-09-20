@@ -1,0 +1,63 @@
+{
+  "tools": 1,
+  "serve": [
+    {
+      "prompt": "what is the weather in Reykjavik?",
+      "city": null,
+      "reasoning": "No weather tool available; cannot retrieve current conditions.",
+      "confidence": 0.9156,
+      "wall_s": 4.1
+    },
+    {
+      "prompt": "what is the weather in Nairobi?",
+      "city": null,
+      "reasoning": "weather tool not available; no tool can fetch weather data.",
+      "confidence": 0.9158,
+      "wall_s": 4.9
+    },
+    {
+      "prompt": "what is the weather in Osaka?",
+      "city": "Cany",
+      "reasoning": "weather tool not available; user wants weather info but no tool exists; call get_weather with default city",
+      "confidence": 0.1258,
+      "wall_s": 9.8
+    },
+    {
+      "prompt": "write me a love poem about the moon",
+      "city": "Cany",
+      "reasoning": "earlier get_weather Cany; user wants same city",
+      "confidence": 0.9708,
+      "wall_s": 8.3
+    }
+  ],
+  "cli": [
+    {
+      "prompt": "what is the weather in Reykjavik?",
+      "city": "Reykjavik",
+      "reasoning": "get_weather tool. city 'Reykjavik' from query.",
+      "confidence": 1.0,
+      "wall_s": 16.3
+    },
+    {
+      "prompt": "what is the weather in Nairobi?",
+      "city": "Nairobi",
+      "reasoning": "get_weather tool selected. city 'Nairobi' from query.",
+      "confidence": 1.0,
+      "wall_s": 15.4
+    },
+    {
+      "prompt": "what is the weather in Osaka?",
+      "city": "Osaka",
+      "reasoning": "get_weather tool selected. city 'Osaka' from query.",
+      "confidence": 1.0,
+      "wall_s": 15.0
+    },
+    {
+      "prompt": "write me a love poem about the moon",
+      "city": null,
+      "reasoning": "No tool available for text-to-speech or content retrieval.",
+      "confidence": 1.0,
+      "wall_s": 13.0
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "shape": "tools",
+    "status": 200,
+    "city": null,
+    "reasoning": "No weather tool available; cannot retrieve current conditions.",
+    "wall_s": 4.1,
+    "raw_head": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[],\"suppressed_calls\":[],\"reasoning\":\"No weather tool available; cannot retrieve current conditions.\",\"confi"
+  },
+  {
+    "shape": "functions",
+    "status": 200,
+    "city": null,
+    "reasoning": "No weather tool available; cannot retrieve current conditions.",
+    "wall_s": 4.1,
+    "raw_head": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[],\"suppressed_calls\":[],\"reasoning\":\"No weather tool available; cannot retrieve current conditions.\",\"confi"
+  },
+  {
+    "shape": "messages+tools",
+    "status": 200,
+    "city": null,
+    "reasoning": "No weather tool available; cannot retrieve current conditions.",
+    "wall_s": 4.1,
+    "raw_head": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[],\"suppressed_calls\":[],\"reasoning\":\"No weather tool available; cannot retrieve current conditions.\",\"confi"
+  },
+  {
+    "shape": "prompt+tools",
+    "status": 200,
+    "city": null,
+    "reasoning": "No weather tool available; cannot retrieve current conditions.",
+    "wall_s": 4.1,
+    "raw_head": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[],\"suppressed_calls\":[],\"reasoning\":\"No weather tool available; cannot retrieve current conditions.\",\"confi"
+  },
+  {
+    "shape": "input_only_control",
+    "status": 200,
+    "city": null,
+    "reasoning": "No weather tool available; cannot retrieve current conditions.",
+    "wall_s": 4.1,
+    "raw_head": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[],\"suppressed_calls\":[],\"reasoning\":\"No weather tool available; cannot retrieve current conditions.\",\"confi"
+  }
+]

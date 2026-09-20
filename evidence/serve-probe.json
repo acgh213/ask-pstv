@@ -1,0 +1,38 @@
+{
+  "port": 8641,
+  "requests": [
+    {
+      "index": 0,
+      "prompt": "what kernel are you running?",
+      "status": 200,
+      "wall_s": 8.890574935998302,
+      "body": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_kernel_info\",\"arguments\":{}}],\"suppressed_calls\":[],\"reasoning\":\"User wants Linux kernel version and processor architecture. get_kernel_info has no required params.\",\"confidence\":1.0000,\"prefill_tps\":12.8,\"decode_tps\":5.2,\"peak_ram_mb\":77.3,\"validation\":{\"ungrounded\":[],\"negation\":false}}"
+    },
+    {
+      "index": 1,
+      "prompt": "what architecture are you?",
+      "status": 200,
+      "wall_s": 7.326306333008688,
+      "body": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_kernel_info\",\"arguments\":{}}],\"suppressed_calls\":[],\"reasoning\":\"carries over nothing from history; new call with no arguments.\",\"confidence\":0.9892,\"prefill_tps\":12.1,\"decode_tps\":5.0,\"peak_ram_mb\":77.3,\"validation\":{\"ungrounded\":[],\"negation\":false}}"
+    },
+    {
+      "index": 2,
+      "prompt": "which kernel version is this?",
+      "status": 200,
+      "wall_s": 7.6434591909637675,
+      "body": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_kernel_info\",\"arguments\":{}}],\"suppressed_calls\":[],\"reasoning\":\"carries over nothing from history; new call with no arguments.\",\"confidence\":0.9641,\"prefill_tps\":11.1,\"decode_tps\":4.8,\"peak_ram_mb\":77.3,\"validation\":{\"ungrounded\":[],\"negation\":false}}"
+    },
+    {
+      "index": 3,
+      "prompt": "what kernel are you running?",
+      "status": 200,
+      "wall_s": 7.989674048963934,
+      "body": "{\"type\":\"call\",\"success\":true,\"error\":null,\"error_code\":null,\"reason\":null,\"function_calls\":[{\"name\":\"get_kernel_info\",\"arguments\":{}}],\"suppressed_calls\":[],\"reasoning\":\"carries over nothing from history; new call with no arguments.\",\"confidence\":0.9849,\"prefill_tps\":10.3,\"decode_tps\":4.6,\"peak_ram_mb\":77.3,\"validation\":{\"ungrounded\":[],\"negation\":false}}"
+    }
+  ],
+  "notes": [],
+  "command": "/root/pstv-needle-feasibility-2026-09-19/needle --model /root/pstv-needle-feasibility-2026-09-19/needle3.cact --tools /root/pstv-needle-feasibility-2026-09-19/ask-pstv-demo/.serve-probe/tools.json --threads 4 --max 128 --serve --port 8641",
+  "listen_ready_s": 4.963237604999449,
+  "server_stdout": "",
+  "server_stderr": "needle serving on http://127.0.0.1:8641  (POST /complete {\"input\":\"...\"}, POST /reset)\n"
+}

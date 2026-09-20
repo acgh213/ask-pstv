@@ -1,0 +1,94 @@
+{
+  "no_reset": [
+    {
+      "prompt": "tell me about Gengar",
+      "selected": "roll_dice",
+      "arguments": {
+        "count": 3,
+        "sides": 100
+      },
+      "confidence": 0.9114,
+      "reasoning": "User wants to roll dice and check real-time status. roll_dice count=3 from '3d20', sides=1 from '2', sides=1 from '2'.",
+      "wall_s": 18.4
+    },
+    {
+      "prompt": "what is the weather in Cheshire?",
+      "selected": "roll_dice",
+      "arguments": {
+        "count": 3,
+        "sides": 100
+      },
+      "confidence": 0.5624,
+      "reasoning": "roll_dice count 3 sides 1 sides 2; user wants count 3 sides 1 sides 2",
+      "wall_s": 14.5
+    },
+    {
+      "prompt": "what architecture are you?",
+      "selected": "roll_dice",
+      "arguments": {
+        "count": 2,
+        "sides": 100
+      },
+      "confidence": 0.7314,
+      "reasoning": "carries over sides=1; count changes from 3 to 2",
+      "wall_s": 12.5
+    },
+    {
+      "prompt": "roll three twenty-sided dice",
+      "selected": "roll_dice",
+      "arguments": {
+        "count": 2,
+        "sides": 100
+      },
+      "confidence": 0.8889,
+      "reasoning": "carries sides=1 from roll_dice; count changes from 3 to 2",
+      "wall_s": 14.2
+    }
+  ],
+  "with_reset": [
+    {
+      "prompt": "tell me about Gengar",
+      "selected": "roll_dice",
+      "arguments": {
+        "count": 3,
+        "sides": 100
+      },
+      "confidence": 0.9114,
+      "reasoning": "User wants to roll dice and check real-time status. roll_dice count=3 from '3d20', sides=1 from '2', sides=1 from '2'.",
+      "wall_s": 18.3
+    },
+    {
+      "prompt": "what is the weather in Cheshire?",
+      "selected": "roll_dice",
+      "arguments": {
+        "count": 3,
+        "sides": 100
+      },
+      "confidence": 0.9114,
+      "reasoning": "User wants to roll dice and check real-time status. roll_dice count=3 from '3d20', sides=1 from '2', sides=1 from '2'.",
+      "wall_s": 18.9
+    },
+    {
+      "prompt": "what architecture are you?",
+      "selected": "roll_dice",
+      "arguments": {
+        "count": 3,
+        "sides": 100
+      },
+      "confidence": 0.9114,
+      "reasoning": "User wants to roll dice and check real-time status. roll_dice count=3 from '3d20', sides=1 from '2', sides=1 from '2'.",
+      "wall_s": 18.3
+    },
+    {
+      "prompt": "roll three twenty-sided dice",
+      "selected": "roll_dice",
+      "arguments": {
+        "count": 3,
+        "sides": 100
+      },
+      "confidence": 0.9114,
+      "reasoning": "User wants to roll dice and check real-time status. roll_dice count=3 from '3d20', sides=1 from '2', sides=1 from '2'.",
+      "wall_s": 18.3
+    }
+  ]
+}
